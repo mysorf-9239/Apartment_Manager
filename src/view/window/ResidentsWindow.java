@@ -3,7 +3,9 @@ package view.window;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import controller.DatabaseConnected;
+import util.CustomPopup;
 import util.ImageLoader;
 import view.table.CustomTable;
 
@@ -12,7 +14,8 @@ public class ResidentsWindow extends JPanel {
     private BufferedImage searchImage;
     private JTextField searchField;
     private String[] columnNames = {"STT", "Nội dung cơ bản", "Sửa", "Xóa"};
-    private Object[][] data;
+    private ArrayList<Object[]> data;
+    private ArrayList<Object[]> currentPageData;
     private int currentPage = 1;
     private int rowsPerPage = 10;
     private int totalPages;
@@ -60,6 +63,10 @@ public class ResidentsWindow extends JPanel {
         JButton addButton = new JButton("Thêm");
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
+        addButton.addActionListener(e -> {
+            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this));
+            popup.show();
+        });
         addPanel.add(addButton);
 
         add(addPanel);
@@ -69,10 +76,11 @@ public class ResidentsWindow extends JPanel {
         data = db.getResidentsData(); // Fetch data from database
 
         // Calculate total pages
-        totalPages = (int) Math.ceil((double) data.length / rowsPerPage);
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        currentPageData = getPageData(currentPage); // Lấy dữ liệu cho trang đầu tiên
 
         // Custom Table
-        customTable = new CustomTable(getPageData(currentPage), columnNames);
+        customTable = new CustomTable(currentPageData, columnNames);
         customTable.setBounds(0, 100, 859, 550);
         add(customTable);
 
@@ -90,14 +98,10 @@ public class ResidentsWindow extends JPanel {
     }
 
     // Lấy dữ liệu cho trang hiện tại
-    private Object[][] getPageData(int page) {
+    private ArrayList<Object[]> getPageData(int page) {
         int start = (page - 1) * rowsPerPage;
-        int end = Math.min(start + rowsPerPage, data.length);
-        Object[][] pageData = new Object[end - start][];
-        for (int i = start; i < end; i++) {
-            pageData[i - start] = data[i];
-        }
-        return pageData;
+        int end = Math.min(start + rowsPerPage, data.size());
+        return new ArrayList<>(data.subList(start, end));
     }
 
     // Cập nhật bảng và phân trang
@@ -154,7 +158,8 @@ public class ResidentsWindow extends JPanel {
 
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
     private void updateTable() {
-        customTable.updateTableData(getPageData(currentPage));
+        currentPageData = getPageData(currentPage);
+        customTable.updateTableData(currentPageData);
         updatePagination();
     }
 

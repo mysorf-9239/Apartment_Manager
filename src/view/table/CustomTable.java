@@ -8,15 +8,16 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 public class CustomTable extends JPanel {
-    private Object[][] data;
+    private ArrayList<Object[]> data;
     private String[] columnNames;
     private int columnX[];
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
-    public CustomTable(Object[][] data, String[] columnNames) {
+    public CustomTable(ArrayList<Object[]> data, String[] columnNames) {
         this.data = data;
         this.columnNames = columnNames;
         columnX = ResidentsWindow.getColumnX();
@@ -33,7 +34,7 @@ public class CustomTable extends JPanel {
     private void createButtons() {
         int rowHeight = 50; // Adjust this based on your row height
 
-        for (int i = 0; i < data.length; i++) {
+        for (int i = 0; i < data.size(); i++) {
             // Create the "Edit" button
             JButton editButton = new JButton(new ImageIcon(editImage));
             editButton.setBounds(columnX[2], (i + 1) * rowHeight + 10, 30, 30);
@@ -67,7 +68,7 @@ public class CustomTable extends JPanel {
         }
     }
 
-    public void updateTableData(Object[][] newData) {
+    public void updateTableData(ArrayList<Object[]> newData) {
         this.data = newData;
         removeAll();
         createButtons();
@@ -75,48 +76,18 @@ public class CustomTable extends JPanel {
         repaint();
     }
 
-    /*
     private void editRow(int rowIndex) {
-        // Mở hộp thoại chỉnh sửa
-        String newData = JOptionPane.showInputDialog(this, "Sửa dữ liệu:", data[rowIndex][1]);
-
-        if (newData != null) {
-            // Cập nhật dữ liệu sau khi chỉnh sửa
-            data[rowIndex][1] = newData;
-            updateTableData(data); // Cập nhật bảng
-        }
+        System.out.println("Editing data for row: " + rowIndex + " with content: " + data.get(rowIndex)[1]);
     }
 
     private void deleteRow(int rowIndex) {
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa dữ liệu này?", "Xóa", JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            // Xóa dữ liệu và cập nhật lại bảng
-            Object[][] newData = new Object[data.length - 1][data[0].length];
-            for (int i = 0, k = 0; i < data.length; i++) {
-                if (i != rowIndex) {
-                    newData[k++] = data[i];
-                }
-            }
-            updateTableData(newData); // Cập nhật bảng sau khi xóa
-        }
-    }
-    */
-
-    private void editRow(int rowIndex) {
-        // Here you can implement the edit logic, e.g., open a new dialog to edit row data
-        System.out.println("Editing data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
-    }
-
-    private void deleteRow(int rowIndex) {
-        // Here you can implement the delete logic, e.g., remove from the database and refresh the table
-        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
+        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data.get(rowIndex)[1]);
     }
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
         int[] colWidth = {50, 660, 70, 70};
-        int totalHeight = (data.length + 1) * rowHeight;
+        int totalHeight = (data.size() + 1) * rowHeight;
 
         // Draw header
         TableHeader.drawHeader(g, columnNames, colWidth, getWidth());
@@ -125,7 +96,7 @@ public class CustomTable extends JPanel {
         drawRow(g);
 
         // Draw horizontal lines
-        for (int i = 0; i <= data.length; i++) {
+        for (int i = 0; i <= data.size(); i++) {
             int y = i * rowHeight;
             g.drawLine(0, y, getWidth(), y);
         }
@@ -143,23 +114,17 @@ public class CustomTable extends JPanel {
     }
 
     private void drawRow(Graphics g) {
-        int rowHeight = 50; // Height for each row
+        int rowHeight = 50;
 
-        for (int i = 0; i < data.length; i++) {
-            for (int j = 0; j < columnNames.length; j++) {
-                String cellValue = (data[i][j] != null) ? data[i][j].toString() : "";
-                int cellXPosition = columnX[j];
+        for (int i = 0; i < data.size(); i++) {
+            Object[] rowData = data.get(i);
 
-                if (j < 2) {
-                    g.drawString(cellValue, cellXPosition, (i + 2) * rowHeight - 20);
-                }
-            }
+            // Draw row index (STT)
+            g.drawString(String.valueOf(rowData[0]), columnX[0], (i + 1) * rowHeight + 30);
+
+            // Draw row content (Nội dung cơ bản)
+            g.drawString((String) rowData[1], columnX[1], (i + 1) * rowHeight + 30);
         }
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(859, 600);
     }
 
     @Override
