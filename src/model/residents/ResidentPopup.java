@@ -1,12 +1,11 @@
-package util;
+package model.residents;
 
 import controller.DatabaseConnected;
-import view.window.ResidentsWindow;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class CustomPopup extends JDialog {
+public class ResidentPopup extends JDialog {
     public ResidentsWindow residentsWindow;
 
     private JTextField nameField;
@@ -17,9 +16,8 @@ public class CustomPopup extends JDialog {
     // Các hằng số để xác định loại popup
     public static final int ADD_RESIDENT = 1;
     public static final int EDIT_RESIDENT = 2;
-    public static final int ADD_HOUSEHOLD = 3;
 
-    public CustomPopup(JFrame parent, int popupName, ResidentsWindow residentsWindow, int editIndex) {
+    public ResidentPopup(JFrame parent, int popupName, ResidentsWindow residentsWindow, int editIndex) {
         super(parent, "Popup", true);
         setUndecorated(true);
         setSize((int)(parent.getWidth() * 0.4), (int)(parent.getHeight() * 0.8));
@@ -40,9 +38,6 @@ public class CustomPopup extends JDialog {
                 break;
             case EDIT_RESIDENT:
                 editResidentContent(popupPanel, editIndex);
-                break;
-            case ADD_HOUSEHOLD:
-                addHouseholdContent(popupPanel);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid popup type");
@@ -352,47 +347,4 @@ public class CustomPopup extends JDialog {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình cập nhật.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-
-
-    private void addHouseholdContent(JPanel panel) {
-        // Thêm các trường nhập liệu cho hộ khẩu ở đây
-        // Ví dụ đơn giản:
-        JLabel householdLabel = new JLabel("Hộ Khẩu:");
-        householdLabel.setBounds(20, 20, 80, 30);
-        panel.add(householdLabel);
-
-        JTextField householdField = new JTextField();
-        householdField.setBounds(100, 20, 250, 50);
-        panel.add(householdField);
-
-        // Nút lưu và hủy
-        JButton saveButton = new JButton("Lưu");
-        saveButton.setBounds(100, 150, 100, 50);
-        saveButton.addActionListener(e -> {
-            // Lưu dữ liệu hộ khẩu
-            dispose();
-        });
-        panel.add(saveButton);
-
-        JButton cancelButton = new JButton("Hủy");
-        cancelButton.setBounds(220, 150, 100, 50);
-        cancelButton.addActionListener(e -> dispose());
-        panel.add(cancelButton);
-    }
-
-    public void showWithBackgroundDim() {
-        JPanel dimBackground = new JPanel();
-        dimBackground.setBackground(new Color(0, 0, 0, 0.5f));
-        dimBackground.setBounds(0, 0, getParent().getWidth(), getParent().getHeight());
-
-        JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(getParent().getWidth(), getParent().getHeight()));
-        layeredPane.add(dimBackground, Integer.valueOf(0));
-        layeredPane.add(this.getContentPane(), Integer.valueOf(1));
-
-        setContentPane(layeredPane);
-        setVisible(true);
-    }
-
 }

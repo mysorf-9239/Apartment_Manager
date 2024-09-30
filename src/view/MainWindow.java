@@ -2,9 +2,9 @@ package view;
 
 import util.ImageLoader;
 import view.window.FeesWindow;
-import view.window.HouseholdsWindow;
+import model.households.HouseholdsWindow;
 import view.window.PaymentsWindow;
-import view.window.ResidentsWindow;
+import model.residents.ResidentsWindow;
 
 import javax.swing.*;
 import java.awt.*;

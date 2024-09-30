@@ -1,13 +1,11 @@
-package view.window;
+package model.residents;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import controller.DatabaseConnected;
-import util.CustomPopup;
 import util.ImageLoader;
-import view.table.CustomTable;
 
 public class ResidentsWindow extends JPanel {
     private static final int[] columnX = {15, 70, 730, 800};
@@ -21,7 +19,7 @@ public class ResidentsWindow extends JPanel {
     public int currentPage = 1;
     private int rowsPerPage = 10;
     private int totalPages;
-    private CustomTable customTable;
+    private ResidentTable residentTable;
     private JPanel paginationPanel;
 
     public ResidentsWindow() {
@@ -66,7 +64,7 @@ public class ResidentsWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this), CustomPopup.ADD_RESIDENT, this, -1);
+            ResidentPopup popup = new ResidentPopup((JFrame) SwingUtilities.getWindowAncestor(this), ResidentPopup.ADD_RESIDENT, this, -1);
             popup.show();
         });
         addPanel.add(addButton);
@@ -82,9 +80,9 @@ public class ResidentsWindow extends JPanel {
         currentPageData = getPageData(currentPage);
 
         // Custom Table
-        customTable = new CustomTable(currentPageData, columnNames, this);
-        customTable.setBounds(0, 100, 859, 550);
-        add(customTable);
+        residentTable = new ResidentTable(currentPageData, columnNames, this);
+        residentTable.setBounds(0, 100, 859, 550);
+        add(residentTable);
 
         // Pagination Panel
         paginationPanel = new JPanel();
@@ -110,41 +108,23 @@ public class ResidentsWindow extends JPanel {
     private void updatePagination() {
         paginationPanel.removeAll();
 
-        // Nút < (trang trước)
-        JButton prevButton = new JButton("<");
-        prevButton.setEnabled(currentPage > 1);
-        prevButton.addActionListener(e -> {
+        // Nút Trước (trang trước)
+        JButton previousButton = new JButton("Trước");
+        previousButton.setEnabled(currentPage > 1);
+        previousButton.addActionListener(e -> {
             if (currentPage > 1) {
                 currentPage--;
                 updateTable();
             }
         });
-        paginationPanel.add(prevButton);
+        paginationPanel.add(previousButton);
 
-        // Hiển thị các nút số trang
-        int startPage = Math.max(1, currentPage - 2);
-        int endPage = Math.min(totalPages, currentPage + 2);
+        // Nhãn hiển thị số trang
+        JLabel pageLabel = new JLabel("Trang " + currentPage + " / " + totalPages);
+        paginationPanel.add(pageLabel);
 
-        if (startPage > 1) {
-            paginationPanel.add(new JLabel("..."));
-        }
-
-        for (int i = startPage; i <= endPage; i++) {
-            JButton pageButton = new JButton(String.valueOf(i));
-            pageButton.setEnabled(i != currentPage);
-            pageButton.addActionListener(e -> {
-                currentPage = Integer.parseInt(pageButton.getText());
-                updateTable();
-            });
-            paginationPanel.add(pageButton);
-        }
-
-        if (endPage < totalPages) {
-            paginationPanel.add(new JLabel("..."));
-        }
-
-        // Nút > (trang sau)
-        JButton nextButton = new JButton(">");
+        // Nút Tiếp theo (trang sau)
+        JButton nextButton = new JButton("Tiếp theo");
         nextButton.setEnabled(currentPage < totalPages);
         nextButton.addActionListener(e -> {
             if (currentPage < totalPages) {
@@ -158,10 +138,11 @@ public class ResidentsWindow extends JPanel {
         paginationPanel.repaint();
     }
 
+
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
     public void updateTable() {
         currentPageData = getPageData(currentPage);
-        customTable.updateTableData(currentPageData);
+        residentTable.updateTableData(currentPageData);
         updatePagination();
     }
 

@@ -1,8 +1,7 @@
-package view.table;
+package model.residents;
 
 import controller.DatabaseConnected;
-import util.CustomPopup;
-import view.window.ResidentsWindow;
+import view.table.TableHeader;
 import util.ImageLoader;
 
 import javax.swing.*;
@@ -12,7 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class CustomTable extends JPanel {
+public class ResidentTable extends JPanel {
     ResidentsWindow residentsWindow;
 
     private ArrayList<Object[]> data;
@@ -21,7 +20,7 @@ public class CustomTable extends JPanel {
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
-    public CustomTable(ArrayList<Object[]> data, String[] columnNames, ResidentsWindow residentsWindow) {
+    public ResidentTable(ArrayList<Object[]> data, String[] columnNames, ResidentsWindow residentsWindow) {
         this.residentsWindow = residentsWindow;
 
         this.data = data;
@@ -82,9 +81,9 @@ public class CustomTable extends JPanel {
     private void editRow(int rowIndex) {
         int editIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
 
-        CustomPopup popup = new CustomPopup(
+        ResidentPopup popup = new ResidentPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
-                CustomPopup.EDIT_RESIDENT,
+                ResidentPopup.EDIT_RESIDENT,
                 residentsWindow,
                 editIndex
         );
@@ -123,7 +122,7 @@ public class CustomTable extends JPanel {
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Draw header
-        TableHeader.drawHeader(g, columnNames, colWidth, getWidth());
+        TableHeader.drawHeaderResident(g, columnNames, colWidth, getWidth());
 
         // Draw rows
         drawRow(g);

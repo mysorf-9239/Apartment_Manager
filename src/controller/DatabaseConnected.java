@@ -1,5 +1,7 @@
 package controller;
 
+import model.Resident;
+
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -155,6 +157,108 @@ public class DatabaseConnected {
             throw new RuntimeException(e);
         }
     }
+
+    // Lấy dữ liệu hộ khẩu và trả về dưới dạng ArrayList<Object[]>
+    public static ArrayList<Object[]> getHouseholdsData() {
+        ArrayList<Object[]> householdsData = new ArrayList<>();
+        String query = "SELECT h.id, h.address, r.id, r.full_name, r.date_of_birth, r.gender, r.id_card " +
+                "FROM households h " +
+                "JOIN residents r ON h.head_of_household = r.id";
+
+        try (Connection conn = DatabaseConnected.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            // Duyệt qua các hàng trong ResultSet và thêm vào ArrayList
+            int index = 0;
+            while (rs.next()) {
+                Object[] row = new Object[4];
+                row[0] = String.format("%02d", index + 1);
+                row[1] = rs.getInt("h.id");
+                row[2] = rs.getString("h.address");
+
+                // Tạo đối tượng Resident (chủ hộ) từ kết quả truy vấn
+                Resident headOfHousehold = new Resident(rs.getInt("r.id"),
+                        rs.getString("r.full_name"),
+                        rs.getString("r.date_of_birth"),
+                        rs.getString("r.gender"),
+                        rs.getString("r.id_card"));
+                row[3] = headOfHousehold;
+
+                householdsData.add(row);
+                index++;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return householdsData;
+    }
+
+
+    // Phương thức tìm thông tin của chủ hộ dựa trên họ tên và CCCD
+    public static Resident getHeadOfHouseholdInfo(String fullName, String idCard) throws SQLException {
+        String sql = "SELECT id, full_name, date_of_birth, gender, id_card FROM residents WHERE full_name = ? AND id_card = ?";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Thiết lập các tham số cho PreparedStatement
+            pstmt.setString(1, fullName);
+            pstmt.setString(2, idCard);
+
+            // Thực thi truy vấn
+            ResultSet rs = pstmt.executeQuery();
+
+            // Kiểm tra kết quả và trả về đối tượng Resident nếu tìm thấy
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("full_name");
+                String birthDate = rs.getString("date_of_birth");
+                String gender = rs.getString("gender");
+                String idCardNumber = rs.getString("id_card");
+
+                // Tạo và trả về đối tượng Resident
+                return new Resident(id, name, birthDate, gender, idCardNumber);
+            } else {
+                return null; // Trả về null nếu không tìm thấy cư dân
+            }
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    // Phương thức thêm hộ khẩu mới vào cơ sở dữ liệu và trả về household_id vừa được tạo
+    public static int addHousehold(String address, int headOfHouseholdId) throws SQLException {
+        String sql = "INSERT INTO households (address, head_of_household) VALUES (?, ?)";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            // Thiết lập các tham số cho PreparedStatement
+            pstmt.setString(1, address);
+            pstmt.setInt(2, headOfHouseholdId);
+
+            // Thực thi câu lệnh thêm mới
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Lấy household_id vừa được tạo từ bảng households
+                ResultSet generatedKeys = pstmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);  // Trả về household_id vừa được thêm
+                }
+            }
+            return -1; // Trả về -1 nếu không thêm được hộ khẩu
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
+
 
 
 }
