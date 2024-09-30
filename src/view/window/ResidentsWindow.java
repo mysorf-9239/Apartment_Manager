@@ -14,8 +14,10 @@ public class ResidentsWindow extends JPanel {
     private BufferedImage searchImage;
     private JTextField searchField;
     private String[] columnNames = {"STT", "Nội dung cơ bản", "Sửa", "Xóa"};
-    private ArrayList<Object[]> data;
-    private ArrayList<Object[]> currentPageData;
+
+    public ArrayList<Object[]> data;
+    public ArrayList<Object[]> currentPageData;
+
     private int currentPage = 1;
     private int rowsPerPage = 10;
     private int totalPages;
@@ -64,7 +66,7 @@ public class ResidentsWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this));
+            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this), CustomPopup.ADD_RESIDENT, this);
             popup.show();
         });
         addPanel.add(addButton);
@@ -77,7 +79,7 @@ public class ResidentsWindow extends JPanel {
 
         // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
-        currentPageData = getPageData(currentPage); // Lấy dữ liệu cho trang đầu tiên
+        currentPageData = getPageData(currentPage);
 
         // Custom Table
         customTable = new CustomTable(currentPageData, columnNames);
@@ -157,7 +159,7 @@ public class ResidentsWindow extends JPanel {
     }
 
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
-    private void updateTable() {
+    public void updateTable() {
         currentPageData = getPageData(currentPage);
         customTable.updateTableData(currentPageData);
         updatePagination();

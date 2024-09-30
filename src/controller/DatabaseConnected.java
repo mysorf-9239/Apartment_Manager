@@ -1,10 +1,6 @@
 package controller;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class DatabaseConnected {
@@ -52,7 +48,7 @@ public class DatabaseConnected {
 
     // Lấy dữ liệu cư dân và trả về dưới dạng ArrayList<Object[]>
     public static ArrayList<Object[]> getResidentsData() {
-        String query = "SELECT CONCAT(full_name, '  -  ', DATE_FORMAT(date_of_birth, '%d/%m/%Y')) AS full_info FROM residents";
+        String query = "SELECT CONCAT(full_name, '  -  ', DATE_FORMAT(date_of_birth, '%Y-%m-%d')) AS full_info FROM residents";
         Connection connection = null;
         ArrayList<Object[]> residentsData = new ArrayList<>(); // Sử dụng ArrayList
 
@@ -80,5 +76,25 @@ public class DatabaseConnected {
         }
 
         return residentsData;
+    }
+
+    public static void addResident(String name, String birthDate, String gender, String idCard) {
+        String query = "INSERT INTO residents (full_name, date_of_birth, gender, id_card) VALUES (?, ?, ?, ?)";
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, name);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(birthDate));
+            preparedStatement.setString(3, gender);
+            preparedStatement.setString(4, idCard);
+
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection(connection);
+        }
     }
 }
