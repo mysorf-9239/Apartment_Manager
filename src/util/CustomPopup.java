@@ -186,7 +186,6 @@ public class CustomPopup extends JDialog {
         residentsWindow.updateTable();
     }
 
-
     private void editResidentContent(JPanel panel, int editIndex) {
         Object[] oldData = residentsWindow.data.get(editIndex);
 

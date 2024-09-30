@@ -133,4 +133,28 @@ public class DatabaseConnected {
         }
     }
 
+    public static boolean deleteResident(int residentID) {
+        String sql = "DELETE FROM residents WHERE id = ?";
+
+        try (Connection connection = DatabaseConnected.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            // Set the residentID in the query
+            preparedStatement.setInt(1, residentID);
+
+            // Execute the update
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            // Return true if delete was successful
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

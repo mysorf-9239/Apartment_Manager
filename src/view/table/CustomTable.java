@@ -1,5 +1,6 @@
 package view.table;
 
+import controller.DatabaseConnected;
 import util.CustomPopup;
 import view.window.ResidentsWindow;
 import util.ImageLoader;
@@ -92,8 +93,29 @@ public class CustomTable extends JPanel {
 
 
     private void deleteRow(int rowIndex) {
-        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data.get(rowIndex)[1]);
+        int deleteIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
+
+        Object[] deleteData = residentsWindow.data.get(deleteIndex);
+
+        int residentID = Integer.parseInt(deleteData[7].toString());
+
+        // Xóa khỏi cơ sở dữ liệu
+        boolean success = DatabaseConnected.deleteResident(residentID);
+
+        if (success) {
+            // Xóa dữ liệu khỏi ArrayList
+            residentsWindow.data.remove(deleteIndex);
+            System.out.println("Data deleted successfully.");
+
+            // Cập nhật bảng
+            residentsWindow.updateTable();
+
+            JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
+
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
