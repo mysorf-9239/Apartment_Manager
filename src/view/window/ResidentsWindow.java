@@ -3,23 +3,25 @@ package view.window;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-
 import controller.DatabaseConnected;
 import util.ImageLoader;
 import view.table.CustomTable;
 
 public class ResidentsWindow extends JPanel {
-
-    private static final int[] columnX = {15, 70, 750, 820};
-
+    private static final int[] columnX = {15, 70, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
     private String[] columnNames = {"STT", "Nội dung cơ bản", "Sửa", "Xóa"};
     private Object[][] data;
+    private int currentPage = 1;
+    private int rowsPerPage = 10;
+    private int totalPages;
+    private CustomTable customTable;
+    private JPanel paginationPanel;
 
     public ResidentsWindow() {
         setLayout(null);
-        loadImages(); // Load images
+        loadImages();
 
         // Title
         JLabel titleLabel = new JLabel("Quản lý nhân khẩu", SwingConstants.CENTER);
@@ -64,28 +66,96 @@ public class ResidentsWindow extends JPanel {
 
         // Retrieve data from the database
         DatabaseConnected db = new DatabaseConnected();
-        // Fetch data from database
-        Object[][] data = db.getResidentsData();
+        data = db.getResidentsData(); // Fetch data from database
+
+        // Calculate total pages
+        totalPages = (int) Math.ceil((double) data.length / rowsPerPage);
 
         // Custom Table
-        CustomTable customTable = new CustomTable(data, columnNames);
+        customTable = new CustomTable(getPageData(currentPage), columnNames);
         customTable.setBounds(0, 100, 859, 550);
         add(customTable);
 
         // Pagination Panel
-        JPanel paginationPanel = new JPanel();
+        paginationPanel = new JPanel();
         paginationPanel.setBounds(0, 650, 859, 40);
         paginationPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        paginationPanel.add(new JLabel("< 1 2 3 4 5 >"));
-        paginationPanel.add(new JLabel("Chuyển đến trang:"));
-        JTextField pageInput = new JTextField(5);
-        paginationPanel.add(pageInput);
         add(paginationPanel);
-    }
 
+        updatePagination();
+    }
 
     private void loadImages() {
         searchImage = ImageLoader.loadImage("/img/search.png", 30, 30);
+    }
+
+    // Lấy dữ liệu cho trang hiện tại
+    private Object[][] getPageData(int page) {
+        int start = (page - 1) * rowsPerPage;
+        int end = Math.min(start + rowsPerPage, data.length);
+        Object[][] pageData = new Object[end - start][];
+        for (int i = start; i < end; i++) {
+            pageData[i - start] = data[i];
+        }
+        return pageData;
+    }
+
+    // Cập nhật bảng và phân trang
+    private void updatePagination() {
+        paginationPanel.removeAll();
+
+        // Nút < (trang trước)
+        JButton prevButton = new JButton("<");
+        prevButton.setEnabled(currentPage > 1);
+        prevButton.addActionListener(e -> {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        });
+        paginationPanel.add(prevButton);
+
+        // Hiển thị các nút số trang
+        int startPage = Math.max(1, currentPage - 2);
+        int endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            paginationPanel.add(new JLabel("..."));
+        }
+
+        for (int i = startPage; i <= endPage; i++) {
+            JButton pageButton = new JButton(String.valueOf(i));
+            pageButton.setEnabled(i != currentPage);
+            pageButton.addActionListener(e -> {
+                currentPage = Integer.parseInt(pageButton.getText());
+                updateTable();
+            });
+            paginationPanel.add(pageButton);
+        }
+
+        if (endPage < totalPages) {
+            paginationPanel.add(new JLabel("..."));
+        }
+
+        // Nút > (trang sau)
+        JButton nextButton = new JButton(">");
+        nextButton.setEnabled(currentPage < totalPages);
+        nextButton.addActionListener(e -> {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        });
+        paginationPanel.add(nextButton);
+
+        paginationPanel.revalidate();
+        paginationPanel.repaint();
+    }
+
+    // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
+    private void updateTable() {
+        customTable.updateTableData(getPageData(currentPage));
+        updatePagination();
     }
 
     public static int[] getColumnX() {

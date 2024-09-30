@@ -36,7 +36,7 @@ public class CustomTable extends JPanel {
         for (int i = 0; i < data.length; i++) {
             // Create the "Edit" button
             JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnX[2] - 20, (i + 1) * rowHeight + 10, 30, 30);
+            editButton.setBounds(columnX[2], (i + 1) * rowHeight + 10, 30, 30);
             add(editButton);
 
             // Add ActionListener to the edit button
@@ -52,7 +52,7 @@ public class CustomTable extends JPanel {
 
             // Create the "Delete" button
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnX[3] - 20, (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnX[3], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Add ActionListener to the delete button
@@ -67,10 +67,50 @@ public class CustomTable extends JPanel {
         }
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        drawTable(g);
+    public void updateTableData(Object[][] newData) {
+        this.data = newData;
+        removeAll();
+        createButtons();
+        revalidate();
+        repaint();
+    }
+
+    /*
+    private void editRow(int rowIndex) {
+        // Mở hộp thoại chỉnh sửa
+        String newData = JOptionPane.showInputDialog(this, "Sửa dữ liệu:", data[rowIndex][1]);
+
+        if (newData != null) {
+            // Cập nhật dữ liệu sau khi chỉnh sửa
+            data[rowIndex][1] = newData;
+            updateTableData(data); // Cập nhật bảng
+        }
+    }
+
+    private void deleteRow(int rowIndex) {
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa dữ liệu này?", "Xóa", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Xóa dữ liệu và cập nhật lại bảng
+            Object[][] newData = new Object[data.length - 1][data[0].length];
+            for (int i = 0, k = 0; i < data.length; i++) {
+                if (i != rowIndex) {
+                    newData[k++] = data[i];
+                }
+            }
+            updateTableData(newData); // Cập nhật bảng sau khi xóa
+        }
+    }
+    */
+
+    private void editRow(int rowIndex) {
+        // Here you can implement the edit logic, e.g., open a new dialog to edit row data
+        System.out.println("Editing data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
+    }
+
+    private void deleteRow(int rowIndex) {
+        // Here you can implement the delete logic, e.g., remove from the database and refresh the table
+        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
     }
 
     private void drawTable(Graphics g) {
@@ -122,13 +162,9 @@ public class CustomTable extends JPanel {
         return new Dimension(859, 600);
     }
 
-    private void editRow(int rowIndex) {
-        // Here you can implement the edit logic, e.g., open a new dialog to edit row data
-        System.out.println("Editing data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
-    }
-
-    private void deleteRow(int rowIndex) {
-        // Here you can implement the delete logic, e.g., remove from the database and refresh the table
-        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        drawTable(g);
     }
 }

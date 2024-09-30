@@ -69,12 +69,9 @@ public class DatabaseConnected {
             while (resultSet.next()) {
                 data[index][0] = String.format("%02d", index + 1);
                 data[index][1] = resultSet.getString("full_info");
-                data[index][2] = new JButton("Sửa");
-                data[index][3] = new JButton("Xóa");
                 index++;
             }
 
-            // Đóng các resource sau khi sử dụng
             resultSet.close();
             statement.close();
 
