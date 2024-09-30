@@ -48,7 +48,7 @@ public class DatabaseConnected {
 
     // Lấy dữ liệu cư dân và trả về dưới dạng ArrayList<Object[]>
     public static ArrayList<Object[]> getResidentsData() {
-        String query = "SELECT CONCAT(full_name, '  -  ', DATE_FORMAT(date_of_birth, '%Y-%m-%d')) AS full_info FROM residents";
+        String query = "SELECT id, full_name, date_of_birth, gender, id_card, is_temp_resident, household_id FROM residents";
         Connection connection = null;
         ArrayList<Object[]> residentsData = new ArrayList<>(); // Sử dụng ArrayList
 
@@ -60,10 +60,20 @@ public class DatabaseConnected {
             // Duyệt qua các hàng trong ResultSet và thêm vào ArrayList
             int index = 0;
             while (resultSet.next()) {
-                Object[] row = new Object[4];
-                row[0] = String.format("%02d", index + 1); // STT
-                row[1] = resultSet.getString("full_info"); // Thông tin cơ bản (Tên và ngày sinh)
-                residentsData.add(row); // Thêm hàng vào ArrayList
+                Object[] row = new Object[8];
+                row[0] = String.format("%02d", index + 1);
+                row[1] = resultSet.getString("full_name");
+                row[2] = resultSet.getString("date_of_birth");
+                row[3] = resultSet.getString("gender");
+                row[4] = resultSet.getString("id_card");
+                row[5] = resultSet.getString("is_temp_resident");
+                if (resultSet.getString("household_id") != null) {
+                    row[6] = resultSet.getString("household_id");
+                } else {
+                    row[6] = "";
+                }
+                row[7] = resultSet.getString("id");
+                residentsData.add(row);
                 index++;
             }
 
@@ -97,4 +107,30 @@ public class DatabaseConnected {
             closeConnection(connection);
         }
     }
+
+    // Phương thức mới để cập nhật cư dân
+    public static boolean updateResident(int residentID, String name, String birthDate, String gender, String idCard) {
+        String sql = "UPDATE residents SET full_name = ?, date_of_birth = ?, gender = ?, id_card = ? WHERE id = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            // Thiết lập các tham số cho PreparedStatement
+            pstmt.setString(1, name);
+            pstmt.setString(2, birthDate);
+            pstmt.setString(3, gender);
+            pstmt.setString(4, idCard);
+            pstmt.setInt(5, residentID);
+
+            // Thực thi câu lệnh cập nhật
+            int affectedRows = pstmt.executeUpdate();
+
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

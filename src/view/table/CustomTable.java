@@ -1,5 +1,6 @@
 package view.table;
 
+import util.CustomPopup;
 import view.window.ResidentsWindow;
 import util.ImageLoader;
 
@@ -11,15 +12,20 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 public class CustomTable extends JPanel {
+    ResidentsWindow residentsWindow;
+
     private ArrayList<Object[]> data;
     private String[] columnNames;
     private int columnX[];
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
-    public CustomTable(ArrayList<Object[]> data, String[] columnNames) {
+    public CustomTable(ArrayList<Object[]> data, String[] columnNames, ResidentsWindow residentsWindow) {
+        this.residentsWindow = residentsWindow;
+
         this.data = data;
         this.columnNames = columnNames;
+
         columnX = ResidentsWindow.getColumnX();
         loadImages();
         setLayout(null);
@@ -45,8 +51,6 @@ public class CustomTable extends JPanel {
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    System.out.println("Editing row: " + rowIndex);
-                    // Implement edit action for the specific row
                     editRow(rowIndex);
                 }
             });
@@ -60,8 +64,6 @@ public class CustomTable extends JPanel {
             deleteButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    System.out.println("Deleting row: " + rowIndex);
-                    // Implement delete action for the specific row
                     deleteRow(rowIndex);
                 }
             });
@@ -77,8 +79,17 @@ public class CustomTable extends JPanel {
     }
 
     private void editRow(int rowIndex) {
-        System.out.println("Editing data for row: " + rowIndex + " with content: " + data.get(rowIndex)[1]);
+        int editIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
+
+        CustomPopup popup = new CustomPopup(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                CustomPopup.EDIT_RESIDENT,
+                residentsWindow,
+                editIndex
+        );
+        popup.setVisible(true);
     }
+
 
     private void deleteRow(int rowIndex) {
         System.out.println("Deleting data for row: " + rowIndex + " with content: " + data.get(rowIndex)[1]);
@@ -124,6 +135,9 @@ public class CustomTable extends JPanel {
 
             // Draw row content (Nội dung cơ bản)
             g.drawString((String) rowData[1], columnX[1], (i + 1) * rowHeight + 30);
+
+            // Draw date
+            g.drawString((String) rowData[2], columnX[1] + 200, (i + 1) * rowHeight + 30);
         }
     }
 

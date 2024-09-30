@@ -18,7 +18,7 @@ public class ResidentsWindow extends JPanel {
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
 
-    private int currentPage = 1;
+    public int currentPage = 1;
     private int rowsPerPage = 10;
     private int totalPages;
     private CustomTable customTable;
@@ -66,7 +66,7 @@ public class ResidentsWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this), CustomPopup.ADD_RESIDENT, this);
+            CustomPopup popup = new CustomPopup((JFrame) SwingUtilities.getWindowAncestor(this), CustomPopup.ADD_RESIDENT, this, -1);
             popup.show();
         });
         addPanel.add(addButton);
@@ -75,14 +75,14 @@ public class ResidentsWindow extends JPanel {
 
         // Retrieve data from the database
         DatabaseConnected db = new DatabaseConnected();
-        data = db.getResidentsData(); // Fetch data from database
+        data = db.getResidentsData();
 
         // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPageData = getPageData(currentPage);
 
         // Custom Table
-        customTable = new CustomTable(currentPageData, columnNames);
+        customTable = new CustomTable(currentPageData, columnNames, this);
         customTable.setBounds(0, 100, 859, 550);
         add(customTable);
 
