@@ -6,6 +6,8 @@ import util.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class CustomTable extends JPanel {
     private Object[][] data;
@@ -19,11 +21,50 @@ public class CustomTable extends JPanel {
         this.columnNames = columnNames;
         columnX = ResidentsWindow.getColumnX();
         loadImages();
+        setLayout(null);
+        createButtons();
     }
 
     private void loadImages() {
         editImage = ImageLoader.loadImage("/img/edit.png", 30, 30);
         deleteImage = ImageLoader.loadImage("/img/delete.png", 30, 30);
+    }
+
+    private void createButtons() {
+        int rowHeight = 50; // Adjust this based on your row height
+
+        for (int i = 0; i < data.length; i++) {
+            // Create the "Edit" button
+            JButton editButton = new JButton(new ImageIcon(editImage));
+            editButton.setBounds(columnX[2] - 20, (i + 1) * rowHeight + 10, 30, 30);
+            add(editButton);
+
+            // Add ActionListener to the edit button
+            int rowIndex = i; // Capture row index for use in the ActionListener
+            editButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    System.out.println("Editing row: " + rowIndex);
+                    // Implement edit action for the specific row
+                    editRow(rowIndex);
+                }
+            });
+
+            // Create the "Delete" button
+            JButton deleteButton = new JButton(new ImageIcon(deleteImage));
+            deleteButton.setBounds(columnX[3] - 20, (i + 1) * rowHeight + 10, 30, 30);
+            add(deleteButton);
+
+            // Add ActionListener to the delete button
+            deleteButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    System.out.println("Deleting row: " + rowIndex);
+                    // Implement delete action for the specific row
+                    deleteRow(rowIndex);
+                }
+            });
+        }
     }
 
     @Override
@@ -66,23 +107,11 @@ public class CustomTable extends JPanel {
 
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < columnNames.length; j++) {
-                // Prepare cell value
                 String cellValue = (data[i][j] != null) ? data[i][j].toString() : "";
-
-                // Set the X position based on column
                 int cellXPosition = columnX[j];
 
-                // Draw text for first two columns
                 if (j < 2) {
                     g.drawString(cellValue, cellXPosition, (i + 2) * rowHeight - 20);
-                }
-
-                // Draw images for edit and delete columns
-                if (j == 2 && editImage != null) {
-                    g.drawImage(editImage, cellXPosition - 20, (i + 1) * rowHeight + 10, this);
-                }
-                if (j == 3 && deleteImage != null) {
-                    g.drawImage(deleteImage, cellXPosition - 20, (i + 1) * rowHeight + 10, this);
                 }
             }
         }
@@ -91,5 +120,15 @@ public class CustomTable extends JPanel {
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(859, 600);
+    }
+
+    private void editRow(int rowIndex) {
+        // Here you can implement the edit logic, e.g., open a new dialog to edit row data
+        System.out.println("Editing data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
+    }
+
+    private void deleteRow(int rowIndex) {
+        // Here you can implement the delete logic, e.g., remove from the database and refresh the table
+        System.out.println("Deleting data for row: " + rowIndex + " with content: " + data[rowIndex][1]);
     }
 }

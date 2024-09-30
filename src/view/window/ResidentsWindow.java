@@ -10,7 +10,7 @@ import view.table.CustomTable;
 
 public class ResidentsWindow extends JPanel {
 
-    private static final int[] columnX = {15, 70, 750, 820}; // Column positions
+    private static final int[] columnX = {15, 70, 750, 820};
 
     private BufferedImage searchImage;
     private JTextField searchField;
@@ -64,16 +64,17 @@ public class ResidentsWindow extends JPanel {
 
         // Retrieve data from the database
         DatabaseConnected db = new DatabaseConnected();
-        Object[][] data = db.getResidentsData(); // Fetch data from database
+        // Fetch data from database
+        Object[][] data = db.getResidentsData();
 
         // Custom Table
         CustomTable customTable = new CustomTable(data, columnNames);
-        customTable.setBounds(0, 100, 859, 600);
+        customTable.setBounds(0, 100, 859, 550);
         add(customTable);
 
         // Pagination Panel
         JPanel paginationPanel = new JPanel();
-        paginationPanel.setBounds(0, 720 - 40, 859, 40);
+        paginationPanel.setBounds(0, 650, 859, 40);
         paginationPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         paginationPanel.add(new JLabel("< 1 2 3 4 5 >"));
         paginationPanel.add(new JLabel("Chuyển đến trang:"));
