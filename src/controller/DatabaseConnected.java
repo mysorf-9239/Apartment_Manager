@@ -256,7 +256,49 @@ public class DatabaseConnected {
         }
     }
 
+    // Phương thức cập nhật hộ khẩu trong cơ sở dữ liệu
+    public static boolean updateHousehold(int householdID, String newAddress, int newHeadOfHouseholdID) throws SQLException {
+        String sql = "UPDATE households SET address = ?, head_of_household = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+            // Thiết lập các tham số cho PreparedStatement
+            pstmt.setString(1, newAddress);
+            pstmt.setInt(2, newHeadOfHouseholdID);
+            pstmt.setInt(3, householdID);
+
+            // Thực thi câu lệnh cập nhật
+            int affectedRows = pstmt.executeUpdate();
+
+            // Trả về true nếu cập nhật thành công
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Phương thức xóa hộ khẩu trong cơ sở dữ liệu
+    public static boolean deleteHousehold(int householdID) {
+        String sql = "DELETE FROM households WHERE id = ?";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, householdID);
+
+            // Thực thi câu lệnh xóa
+            int affectedRows = pstmt.executeUpdate();
+
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
 

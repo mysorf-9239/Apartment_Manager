@@ -141,4 +141,14 @@ public class HouseholdsWindow extends JPanel {
     public static int[] getColumnXHousehold() {
         return columnXHousehold;
     }
+
+    public int getIndexById(int householdID) {
+        for (int i = 0; i < data.size(); i++) {
+            if (Integer.parseInt(data.get(i)[1].toString()) == householdID) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }

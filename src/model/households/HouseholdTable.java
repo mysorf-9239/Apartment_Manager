@@ -1,5 +1,6 @@
 package model.households;
 
+import controller.DatabaseConnected;
 import view.table.TableHeader;
 import util.ImageLoader;
 import model.Resident;
@@ -95,25 +96,27 @@ public class HouseholdTable extends JPanel {
 
         int householdID = Integer.parseInt(deleteData[0].toString());
 
-        /*
-        // Xóa khỏi cơ sở dữ liệu
-        boolean success = DatabaseConnected.deleteHousehold(householdID);
+        // Xác nhận trước khi xóa
+        int confirmation = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa hộ khẩu này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirmation == JOptionPane.YES_OPTION) {
+            // Xóa khỏi cơ sở dữ liệu
+            boolean success = DatabaseConnected.deleteHousehold(householdID);
 
-        if (success) {
-            // Xóa dữ liệu khỏi ArrayList
-            householdsWindow.data.remove(deleteIndex);
-            System.out.println("Data deleted successfully.");
+            if (success) {
+                // Xóa dữ liệu khỏi ArrayList
+                householdsWindow.data.remove(deleteIndex);
 
-            // Cập nhật bảng
-            householdsWindow.updateTable();
+                // Cập nhật bảng
+                householdsWindow.updateTable();
 
-            JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                // Hiển thị thông báo thành công
+                JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         }
-
-         */
     }
+
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
