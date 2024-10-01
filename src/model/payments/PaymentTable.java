@@ -14,7 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.text.NumberFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -211,6 +210,11 @@ public class PaymentTable extends JPanel {
 
             // Vẽ hạn nộp
             g.drawString(formatDate((Date) rowData[5]), columnX[4], (i + 1) * rowHeight + 30);
+        }
+
+        if (data.isEmpty()) {
+            g.setFont(getFont().deriveFont(Font.BOLD, 20f));
+            g.drawString("Hiện tại chưa có dữ liệu ở bảng này", 250, 300);
         }
     }
 

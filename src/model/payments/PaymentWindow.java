@@ -8,7 +8,7 @@ import controller.DatabaseConnected;
 import util.ImageLoader;
 
 public class PaymentWindow extends JPanel {
-    private static final int[] columnX = {15, 80, 235, 330, 543, 660, 730, 800};
+    private static final int[] columnX = {18, 80, 238, 330, 543, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
     private String[] columnNames = {"STT", "Chủ hộ", "Phải nộp", "Đã nộp", "Hạn nộp", "Xem", "Sửa", "Xóa"};

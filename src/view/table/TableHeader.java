@@ -7,7 +7,7 @@ public class TableHeader {
     static int[] columnX1 = {13, 180, 410, 497, 618, 735, 805};
     static int[] columnX2 = {13, 200, 520, 662, 735, 805};
     static int[] columnX3 = {13, 80, 250, 400, 540, 662, 735, 805};
-    static int[] columnX4 = {13, 80, 250, 400, 540, 662, 735, 805};
+    static int[] columnX4 = {13, 110, 245, 400, 555, 662, 735, 805};
 
 
     public static void drawHeaderResident(Graphics g, String[] columnNames, int[] colWidth, int tableWidth) {
@@ -66,7 +66,7 @@ public class TableHeader {
 
         // Draw header text
         for (int i = 0; i < columnNames.length; i++) {
-            g.drawString(columnNames[i], columnX3[i], 30);
+            g.drawString(columnNames[i], columnX4[i], 30);
         }
     }
 }

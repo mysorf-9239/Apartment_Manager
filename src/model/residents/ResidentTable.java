@@ -90,7 +90,6 @@ public class ResidentTable extends JPanel {
         popup.setVisible(true);
     }
 
-
     private void deleteRow(int rowIndex) {
         int deleteIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
 
@@ -114,7 +113,6 @@ public class ResidentTable extends JPanel {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
@@ -165,6 +163,11 @@ public class ResidentTable extends JPanel {
 
             // Draw idCard
             g.drawString((String) rowData[4], columnX[4], (i + 1) * rowHeight + 30);
+        }
+
+        if (data.isEmpty()) {
+            g.setFont(getFont().deriveFont(Font.BOLD, 20f));
+            g.drawString("Hiện tại chưa có dữ liệu ở bảng này", 250, 300);
         }
     }
 

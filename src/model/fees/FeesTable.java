@@ -200,6 +200,11 @@ public class FeesTable extends JPanel {
             String formattedDate = formatDate(createdAt);
             g.drawString(formattedDate, columnX[4], (i + 1) * rowHeight + 30);
         }
+
+        if (data.isEmpty()) {
+            g.setFont(getFont().deriveFont(Font.BOLD, 20f));
+            g.drawString("Hiện tại chưa có dữ liệu ở bảng này", 250, 300);
+        }
     }
 
     private String formatCurrency(Double amount) {

@@ -189,7 +189,11 @@ public class HouseholdTable extends JPanel {
             Resident headOfHousehold = (Resident) rowData[3];
 
             g.drawString(headOfHousehold.full_name, columnXHousehold[2], (i + 1) * rowHeight + 30);
+        }
 
+        if (data.isEmpty()) {
+            g.setFont(getFont().deriveFont(Font.BOLD, 20f));
+            g.drawString("Hiện tại chưa có dữ liệu ở bảng này", 250, 300);
         }
     }
 
