@@ -1,21 +1,28 @@
 package model.households;
 
 import controller.DatabaseConnected;
+import model.HouseholdMember;
 import model.Resident;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class HouseholdPopup extends JDialog {
     public HouseholdsWindow householdsWindow;
+
+    ArrayList<HouseholdMember> members;
 
     private JTextField addressField;
     private JTextField nameField;
     private JTextField CCCDField;
 
-    public static final int ADD_HOUSEHOLD = 1;
-    public static final int EDIT_HOUSEHOLD = 2;
+    public static final int VIEW_HOUSEHOLD = 1;
+    public static final int ADD_HOUSEHOLD = 2;
+    public static final int EDIT_HOUSEHOLD = 3;
 
     public HouseholdPopup(JFrame parent, int popupType, HouseholdsWindow householdsWindow, int editIndex) {
         super(parent, "Popup", true);
@@ -31,6 +38,9 @@ public class HouseholdPopup extends JDialog {
         popupPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         switch (popupType) {
+            case VIEW_HOUSEHOLD:
+                viewHouseholdContent(popupPanel, editIndex);
+                break;
             case ADD_HOUSEHOLD:
                 addHouseholdContent(popupPanel);
                 break;
@@ -44,6 +54,320 @@ public class HouseholdPopup extends JDialog {
         setContentPane(popupPanel);
     }
 
+    private void viewHouseholdContent(JPanel panel, int editIndex) {
+        Object[] householdData = householdsWindow.data.get(editIndex);
+        int householdID = Integer.parseInt(householdData[1].toString());
+        String householdAddress = (String) householdData[2];
+        Resident headOfHousehold = (Resident) householdData[3];
+
+        panel.setLayout(null);
+
+        // Header
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(null);
+        headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
+        headerPanel.setBackground(Color.LIGHT_GRAY);
+
+        JLabel titleLabel = new JLabel("Xem Hộ Khẩu", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
+        headerPanel.add(titleLabel);
+        panel.add(headerPanel);
+
+        // Content Panel
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBounds(0, headerPanel.getHeight(), getWidth(), getHeight() * 4 / 5);
+        contentPanel.setBackground(Color.WHITE);
+
+        // Địa chỉ
+        JLabel addressLabel = new JLabel("Địa chỉ:");
+        addressLabel.setBounds(20, 50, getWidth() / 4, 40);
+        contentPanel.add(addressLabel);
+
+        JTextField addressField = new JTextField(householdAddress);
+        addressField.setBounds(20 + getWidth() / 4, 50, 300, 40);
+        addressField.setEditable(false);
+        contentPanel.add(addressField);
+
+        // Chủ hộ
+        JLabel headOfHouseholdLabel = new JLabel("Chủ hộ:");
+        headOfHouseholdLabel.setBounds(20, 100, getWidth() / 4, 40);
+        contentPanel.add(headOfHouseholdLabel);
+
+        JTextField headOfHouseholdField = new JTextField(headOfHousehold.full_name);
+        headOfHouseholdField.setBounds(20 + getWidth() / 4, 100, 200, 40);
+        headOfHouseholdField.setEditable(false);
+        contentPanel.add(headOfHouseholdField);
+
+
+        JPanel leftMembersPanel = new JPanel();
+        JPanel rightActionPanel = new JPanel();
+
+
+        JButton detailsButton = new JButton("Chi tiết");
+        detailsButton.setBounds(330, 100, 100, 40);
+        detailsButton.addActionListener(e -> {
+            showHeadOfHouseholdDetails(rightActionPanel, headOfHousehold);
+        });
+        contentPanel.add(detailsButton);
+
+        JLabel menberTitleLable = new JLabel("Các thành viên");
+        menberTitleLable.setBounds(25, 143, 150, 30);
+        contentPanel.add(menberTitleLable);
+
+        // Left Panel for members (Chia ra phần bên trái)
+        leftMembersPanel.setLayout(null);
+        leftMembersPanel.setBounds(20, 180, (getWidth() - 60) / 2, 270);
+        rightActionPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        contentPanel.add(leftMembersPanel);
+
+        // Right Panel (Initially empty, sẽ hiển thị thông tin chi tiết hoặc form thêm)
+        rightActionPanel.setLayout(null);
+        rightActionPanel.setBounds(40 + leftMembersPanel.getWidth(), 180, (getWidth() - 60) / 2, 270);
+        rightActionPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        contentPanel.add(rightActionPanel);
+
+        // Lấy danh sách thành viên cùng mối quan hệ
+        members = DatabaseConnected.getHouseholdMembersWithRelationships(householdID);
+        int yOffset = 10;
+        for (HouseholdMember member : members) {
+            // Member name
+            JLabel memberLabel = new JLabel(member.resident.full_name);
+            memberLabel.setBounds(5, yOffset, leftMembersPanel.getWidth() / 2, 30);
+            leftMembersPanel.add(memberLabel);
+
+            // Member relationship
+            JLabel relationshipLabel = new JLabel(member.relationshipType);
+            relationshipLabel.setBounds(15+ leftMembersPanel.getWidth() / 2, yOffset, leftMembersPanel.getWidth() / 2, 30);
+            leftMembersPanel.add(relationshipLabel);
+
+            JButton showMemberButton = new JButton("View");
+            showMemberButton.setBounds(130, yOffset, 60, 30);
+            showMemberButton.addActionListener(e -> {
+                showMemberDetails(rightActionPanel, member.resident, member.relationshipType);
+            });
+            leftMembersPanel.add(showMemberButton);
+
+            // Tăng vị trí y để thành viên kế tiếp hiển thị bên dưới
+            yOffset += 35;
+
+            // Add a listener to show member details on click
+            memberLabel.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    showMemberDetails(rightActionPanel, member.resident, member.relationshipType);
+                }
+            });
+        }
+
+
+        // Button "Thêm" to add a new member
+        JButton addButton = new JButton("Thêm");
+        addButton.setBounds(350, 143, 60, 30);
+        addButton.addActionListener(e -> {
+            showAddMemberForm(leftMembersPanel, rightActionPanel, householdID, headOfHousehold.id);
+        });
+        contentPanel.add(addButton);
+
+        panel.add(contentPanel);
+
+        // Footer
+        JPanel footerPanel = new JPanel();
+        footerPanel.setLayout(null);
+        footerPanel.setBounds(0, headerPanel.getHeight() + contentPanel.getHeight(), getWidth(), getHeight() / 10);
+        footerPanel.setBackground(Color.LIGHT_GRAY);
+
+        // Nút Hủy
+        JButton cancelButton = new JButton("Hủy");
+        cancelButton.setBounds((footerPanel.getWidth() - 60) / 2, (footerPanel.getHeight() - 40) / 2, 60, 40);
+        cancelButton.addActionListener(e -> dispose());
+        footerPanel.add(cancelButton);
+
+        panel.add(footerPanel);
+    }
+
+    // Thông tin chủ hộ
+    private void showHeadOfHouseholdDetails(JPanel rightPanel, Resident headOfHousehold) {
+        rightPanel.removeAll();
+
+        JLabel title = new JLabel("Chi tiết Chủ hộ:");
+        title.setBounds(10, 10, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(title);
+
+        JLabel nameLabel = new JLabel("Họ và tên: " + headOfHousehold.full_name);
+        nameLabel.setBounds(10, 50, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(nameLabel);
+
+        JLabel dobLabel = new JLabel("Ngày sinh: " + headOfHousehold.date_of_birth);
+        dobLabel.setBounds(10, 90, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(dobLabel);
+
+        JLabel genderLabel = new JLabel("Giới tính: " + headOfHousehold.gender);
+        genderLabel.setBounds(10, 130, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(genderLabel);
+
+        JLabel idCardLabel = new JLabel("CCCD: " + headOfHousehold.idCard);
+        idCardLabel.setBounds(10, 170, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(idCardLabel);
+
+        rightPanel.revalidate();
+        rightPanel.repaint();
+    }
+
+    // Thông tin thành viên
+    private void showMemberDetails(JPanel rightPanel, Resident member, String relationshipType) {
+        rightPanel.removeAll();
+
+        JLabel title = new JLabel("Chi tiết Thành viên:");
+        title.setBounds(10, 10, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(title);
+
+        JLabel nameLabel = new JLabel("Họ và tên: " + member.full_name);
+        nameLabel.setBounds(10, 50, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(nameLabel);
+
+        JLabel relationLabel = new JLabel("Quan hệ: " + relationshipType);
+        relationLabel.setBounds(10, 90, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(relationLabel);
+
+        JLabel dobLabel = new JLabel("Ngày sinh: " + member.date_of_birth);
+        dobLabel.setBounds(10, 130, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(dobLabel);
+
+        JLabel genderLabel = new JLabel("Giới tính: " + member.gender);
+        genderLabel.setBounds(10, 170, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(genderLabel);
+
+        JLabel idCardLabel = new JLabel("CCCD: " + member.idCard);
+        idCardLabel.setBounds(10, 210, rightPanel.getWidth() - 20, 30);
+        rightPanel.add(idCardLabel);
+
+        rightPanel.revalidate();
+        rightPanel.repaint();
+    }
+
+    // Thêm thành viên
+    private void showAddMemberForm(JPanel leftPanel, JPanel rightPanel, int householdID, int headOfHouseholdID) {
+        rightPanel.removeAll();
+
+        // Tạo tiêu đề
+        JLabel title = new JLabel("Thêm thành viên mới");
+        title.setBounds(10, 10, rightPanel.getWidth() - 20, 30);
+        title.setFont(new Font("Arial", Font.BOLD, 16));
+        rightPanel.add(title);
+
+        // Tạo label và text field để nhập tên thành viên
+        JLabel nameLabel = new JLabel("Họ và tên:");
+        nameLabel.setBounds(10, 50, 100, 25);
+        rightPanel.add(nameLabel);
+
+        JTextField nameField = new JTextField();
+        nameField.setBounds(10, 75, 165, 25);
+        rightPanel.add(nameField);
+
+        // Tạo label và text field để nhập CCCD
+        JLabel idCardLabel = new JLabel("CCCD:");
+        idCardLabel.setBounds(10, 100, 100, 25);
+        rightPanel.add(idCardLabel);
+
+        JTextField idCardField = new JTextField();
+        idCardField.setBounds(10, 125, 165, 25);
+        rightPanel.add(idCardField);
+
+        // Tạo label và text field để nhập quan hệ với chủ hộ
+        JLabel relationshipLabel = new JLabel("Quan hệ với chủ hộ:");
+        relationshipLabel.setBounds(10, 150, 150, 25);
+        rightPanel.add(relationshipLabel);
+
+        JTextField relationshipField = new JTextField();
+        relationshipField.setBounds(10, 175, 165, 25);
+        rightPanel.add(relationshipField);
+
+        // Nút Lưu để thêm thành viên mới
+        JButton saveButton = new JButton("Lưu");
+        saveButton.setBounds(60, 220, 60, 40);
+        rightPanel.add(saveButton);
+
+        // Xử lý sự kiện khi nhấn nút Lưu
+        saveButton.addActionListener(e -> {
+            String name = nameField.getText();
+            String idCard = idCardField.getText();
+            String relationship = relationshipField.getText();
+
+            if (name.isEmpty() || idCard.isEmpty() || relationship.isEmpty()) {
+                JOptionPane.showMessageDialog(rightPanel, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Gọi hàm để thêm thành viên mới vào hộ khẩu
+            addNewMemberToHousehold(leftPanel, rightPanel, householdID, headOfHouseholdID, name, idCard, relationship);
+
+            // Cập nhật giao diện sau khi thêm thành viên thành công
+            rightPanel.removeAll();
+            rightPanel.add(new JLabel("Thành viên mới đã được thêm!"));
+            rightPanel.revalidate();
+            rightPanel.repaint();
+        });
+
+        // Cập nhật lại giao diện
+        rightPanel.revalidate();
+        rightPanel.repaint();
+    }
+
+    private void addNewMemberToHousehold(JPanel leftPanel, JPanel rightPanel, int householdID, int headOfHouseholdID, String name, String idCard, String relationshipType) {
+        try {
+            // Step 1: Tìm resident_id từ residents table
+            Resident addResident = DatabaseConnected.getHeadOfHouseholdInfo(name, idCard);
+
+            // Step 2: Thêm thành viên vào hộ khẩu
+            assert addResident != null;
+            boolean inserted = DatabaseConnected.addRelationship(addResident.id, headOfHouseholdID, relationshipType, householdID);
+            if (inserted) {
+                JOptionPane.showMessageDialog(null, "Thêm hộ khẩu thành công!");
+
+                // Step 3: Update member
+                HouseholdMember newMember = new HouseholdMember(addResident, relationshipType);
+
+                members.add(newMember);
+
+                // Re-render the members panel to show the newly added member
+                reRender(leftPanel, rightPanel);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Vẽ lại
+    private void reRender(JPanel leftPanel, JPanel rightPanel) {
+        leftPanel.removeAll();
+
+        int yOffset = 10;
+
+        for (HouseholdMember member : members) {
+            JLabel memberLabel = new JLabel(member.resident.full_name);
+            memberLabel.setBounds(5, yOffset, leftPanel.getWidth() / 2, 30);
+            leftPanel.add(memberLabel);
+
+            JLabel relationshipLabel = new JLabel(member.relationshipType);
+            relationshipLabel.setBounds(15 + leftPanel.getWidth() / 2, yOffset, leftPanel.getWidth() / 2, 30);
+            leftPanel.add(relationshipLabel);
+
+            JButton viewMemberButton = new JButton("View");
+            viewMemberButton.setBounds(leftPanel.getWidth() - 70, yOffset, 60, 30);
+            viewMemberButton.addActionListener(e -> {
+                showMemberDetails(rightPanel, member.resident, member.relationshipType);
+            });
+            leftPanel.add(viewMemberButton);
+
+            yOffset += 35;
+        }
+
+        leftPanel.revalidate();
+        leftPanel.repaint();
+    }
+
+    // Thêm hộ khẩu
     private void addHouseholdContent(JPanel panel) {
         panel.setLayout(null);
 
@@ -141,7 +465,6 @@ public class HouseholdPopup extends JDialog {
         panel.add(footerPanel);
     }
 
-
     private void saveAddHousehold() {
         // Lấy giá trị từ các trường nhập liệu
         String address = addressField.getText();
@@ -190,6 +513,7 @@ public class HouseholdPopup extends JDialog {
         }
     }
 
+    //Sửa hộ khẩu
     private void editHouseholdContent(JPanel panel, int editIndex) {
         Object[] oldData = householdsWindow.data.get(editIndex);
 
@@ -232,7 +556,7 @@ public class HouseholdPopup extends JDialog {
         addressLabel.setBounds(20, 90, getWidth() / 4, 40);
         contentPanel.add(addressLabel);
 
-        addressField = new JTextField();
+        addressField = new JTextField(householdAddress);
         addressField.setBounds(20 + getWidth() / 4, 90, 300, 40);
         contentPanel.add(addressField);
 
@@ -256,7 +580,7 @@ public class HouseholdPopup extends JDialog {
         nameLabel.setBounds(40, 200, getWidth() / 4, 40);
         contentPanel.add(nameLabel);
 
-        nameField = new JTextField();
+        nameField = new JTextField(householdHeader.full_name);
         nameField.setBounds(20 + getWidth() / 4, 200, 300, 40);
         contentPanel.add(nameField);
 
@@ -275,7 +599,7 @@ public class HouseholdPopup extends JDialog {
         idCardLabel.setBounds(40, 280, getWidth() / 4, 40);
         contentPanel.add(idCardLabel);
 
-        CCCDField = new JTextField();
+        CCCDField = new JTextField(householdHeader.idCard);
         CCCDField.setBounds(20 + getWidth() / 4, 280, 300, 40);
         contentPanel.add(CCCDField);
 
@@ -347,5 +671,4 @@ public class HouseholdPopup extends JDialog {
             JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 }

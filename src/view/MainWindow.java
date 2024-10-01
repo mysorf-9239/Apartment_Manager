@@ -1,7 +1,7 @@
 package view;
 
 import util.ImageLoader;
-import view.window.FeesWindow;
+import model.fees.FeesWindow;
 import model.households.HouseholdsWindow;
 import view.window.PaymentsWindow;
 import model.residents.ResidentsWindow;

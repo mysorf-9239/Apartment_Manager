@@ -9,6 +9,7 @@ public class Resident {
     public String idCard;
     public boolean is_temp_resident;
     public int household_id;
+    public String relationshipType;
 
     public Resident(int id, String full_name, String date_of_birth, String gender, String idCard) {
         this.id = id;

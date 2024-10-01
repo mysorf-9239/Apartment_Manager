@@ -18,6 +18,7 @@ public class HouseholdTable extends JPanel {
     private ArrayList<Object[]> data;
     private String[] columnNames;
     private int columnXHousehold[];
+    private BufferedImage viewImage;
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
@@ -32,6 +33,7 @@ public class HouseholdTable extends JPanel {
     }
 
     private void loadImages() {
+        viewImage = ImageLoader.loadImage("/img/view.png", 30, 30);
         editImage = ImageLoader.loadImage("/img/edit.png", 30, 30);
         deleteImage = ImageLoader.loadImage("/img/delete.png", 30, 30);
     }
@@ -40,13 +42,26 @@ public class HouseholdTable extends JPanel {
         int rowHeight = 50;
 
         for (int i = 0; i < data.size(); i++) {
+            // Create the "View" button
+            JButton viewButton = new JButton(new ImageIcon(viewImage));
+            viewButton.setBounds(columnXHousehold[3], (i + 1) * rowHeight + 10, 30, 30);
+            add(viewButton);
+
+            // Add ActionListener to the view button
+            int rowIndex = i;
+            viewButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    viewRow(rowIndex);
+                }
+            });
+
             // Create the "Edit" button
             JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnXHousehold[3], (i + 1) * rowHeight + 10, 30, 30);
+            editButton.setBounds(columnXHousehold[4], (i + 1) * rowHeight + 10, 30, 30);
             add(editButton);
 
             // Add ActionListener to the edit button
-            int rowIndex = i;
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -56,7 +71,7 @@ public class HouseholdTable extends JPanel {
 
             // Create the "Delete" button
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnXHousehold[4], (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnXHousehold[5], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Add ActionListener to the delete button
@@ -67,6 +82,18 @@ public class HouseholdTable extends JPanel {
                 }
             });
         }
+    }
+
+    private void viewRow(int rowIndex) {
+        int viewIndex = rowIndex + (householdsWindow.currentPage - 1) * 10;
+
+        HouseholdPopup popup = new HouseholdPopup(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                HouseholdPopup.VIEW_HOUSEHOLD,
+                householdsWindow,
+                viewIndex
+        );
+        popup.setVisible(true);
     }
 
     public void updateTableData(ArrayList<Object[]> newData) {
@@ -117,10 +144,9 @@ public class HouseholdTable extends JPanel {
         }
     }
 
-
     private void drawTable(Graphics g) {
         int rowHeight = 50;
-        int[] colWidth = {50, 460, 200, 70, 70};
+        int[] colWidth = {50, 390, 200, 70, 70, 70};
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Draw header

@@ -8,10 +8,10 @@ import controller.DatabaseConnected;
 import util.ImageLoader;
 
 public class HouseholdsWindow extends JPanel {
-    private static final int[] columnXHousehold = {15, 70, 535, 730, 800};
+    private static final int[] columnXHousehold = {15, 70, 475, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Địa chỉ", "Chủ hộ", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Địa chỉ", "Chủ hộ", "Xem", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;

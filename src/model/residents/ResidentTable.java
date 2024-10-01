@@ -43,7 +43,7 @@ public class ResidentTable extends JPanel {
         for (int i = 0; i < data.size(); i++) {
             // Create the "Edit" button
             JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnX[2], (i + 1) * rowHeight + 10, 30, 30);
+            editButton.setBounds(columnX[5], (i + 1) * rowHeight + 10, 30, 30);
             add(editButton);
 
             // Add ActionListener to the edit button
@@ -57,7 +57,7 @@ public class ResidentTable extends JPanel {
 
             // Create the "Delete" button
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnX[3], (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Add ActionListener to the delete button
@@ -118,7 +118,7 @@ public class ResidentTable extends JPanel {
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
-        int[] colWidth = {50, 660, 70, 70};
+        int[] colWidth = {50, 340, 100, 70, 150, 70, 70};
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Draw header
@@ -158,7 +158,13 @@ public class ResidentTable extends JPanel {
             g.drawString((String) rowData[1], columnX[1], (i + 1) * rowHeight + 30);
 
             // Draw date
-            g.drawString((String) rowData[2], columnX[1] + 200, (i + 1) * rowHeight + 30);
+            g.drawString((String) rowData[2], columnX[2], (i + 1) * rowHeight + 30);
+
+            // Draw gender
+            g.drawString((String) rowData[3], columnX[3], (i + 1) * rowHeight + 30);
+
+            // Draw idCard
+            g.drawString((String) rowData[4], columnX[4], (i + 1) * rowHeight + 30);
         }
     }
 

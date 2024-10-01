@@ -1,4 +1,4 @@
-package model.residents;
+package model.fees;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,32 +7,32 @@ import java.util.ArrayList;
 import controller.DatabaseConnected;
 import util.ImageLoader;
 
-public class ResidentsWindow extends JPanel {
-    private static final int[] columnX = {15, 80, 400, 510, 590, 730, 800};
+public class FeesWindow extends JPanel {
+    private static final int[] columnX = {15, 80, 235, 330, 543, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Họ và tên", "Ngày sinh", "Giới tính", "CCCD", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Tên Khoản Phí", "Số Tiền", "Miêu tả", "Thời gian tạo", "Xem", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
 
     public int currentPage = 1;
-    private int rowsPerPage = 10;
+    public int rowsPerPage = 10;
     private int totalPages;
-    private ResidentTable residentTable;
+    private FeesTable feesTable;
     private JPanel paginationPanel;
 
-    public ResidentsWindow() {
+    public FeesWindow() {
         setLayout(null);
         loadImages();
 
-        // Title
-        JLabel titleLabel = new JLabel("Quản lý nhân khẩu", SwingConstants.CENTER);
+        // Tiêu đề
+        JLabel titleLabel = new JLabel("Quản lý khoản phí", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, 859, 30);
         add(titleLabel);
 
-        // Search Box
+        // Ô tìm kiếm
         JPanel searchBox = new JPanel();
         searchBox.setBounds(0, 40, 859, 30);
         searchBox.setLayout(null);
@@ -55,7 +55,7 @@ public class ResidentsWindow extends JPanel {
 
         add(searchBox);
 
-        // Add Button
+        // Nút thêm
         JPanel addPanel = new JPanel();
         addPanel.setBounds(0, 65, 859, 30);
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -64,27 +64,27 @@ public class ResidentsWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            ResidentPopup popup = new ResidentPopup((JFrame) SwingUtilities.getWindowAncestor(this), ResidentPopup.ADD_RESIDENT, this, -1);
+            FeesPopup popup = new FeesPopup((JFrame) SwingUtilities.getWindowAncestor(this), FeesPopup.ADD_FEE, this, -1);
             popup.show();
         });
         addPanel.add(addButton);
 
         add(addPanel);
 
-        // Retrieve data from the database
+        // Lấy dữ liệu từ cơ sở dữ liệu
         DatabaseConnected db = new DatabaseConnected();
-        data = db.getResidentsData();
+        data = db.getFeesData();
 
-        // Calculate total pages
+        // Tính tổng số trang
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPageData = getPageData(currentPage);
 
-        // Custom Table
-        residentTable = new ResidentTable(currentPageData, columnNames, this);
-        residentTable.setBounds(0, 100, 859, 550);
-        add(residentTable);
+        // Bảng phí
+        feesTable = new FeesTable(currentPageData, columnNames, this);
+        feesTable.setBounds(0, 100, 859, 550);
+        add(feesTable);
 
-        // Pagination Panel
+        // Bảng phân trang
         paginationPanel = new JPanel();
         paginationPanel.setBounds(0, 650, 859, 40);
         paginationPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -138,11 +138,10 @@ public class ResidentsWindow extends JPanel {
         paginationPanel.repaint();
     }
 
-
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
     public void updateTable() {
         currentPageData = getPageData(currentPage);
-        residentTable.updateTableData(currentPageData);
+        feesTable.updateTableData(currentPageData);
         updatePagination();
     }
 

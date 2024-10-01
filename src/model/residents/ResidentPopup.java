@@ -226,7 +226,7 @@ public class ResidentPopup extends JDialog {
         nameLabel.setBounds(20, 90, getWidth() / 4, 40);
         contentPanel.add(nameLabel);
 
-        nameField = new JTextField();
+        nameField = new JTextField(oldName);
         nameField.setBounds(10 + getWidth() / 4 + 5, 90, 300, 40);
         contentPanel.add(nameField);
 
@@ -245,7 +245,7 @@ public class ResidentPopup extends JDialog {
         birthDateLabel.setBounds(20, 170, getWidth() / 4, 40);
         contentPanel.add(birthDateLabel);
 
-        birthDateField = new JTextField();
+        birthDateField = new JTextField(oldBirthDate);
         birthDateField.setBounds(10 + getWidth() / 4 + 5, 170, 300, 40);
         contentPanel.add(birthDateField);
 
@@ -264,7 +264,7 @@ public class ResidentPopup extends JDialog {
         genderLabel.setBounds(20, 250, getWidth() / 4, 40);
         contentPanel.add(genderLabel);
 
-        genderField = new JTextField();
+        genderField = new JTextField(oldGender);
         genderField.setBounds(10 + getWidth() / 4 + 5, 250, 300, 40);
         contentPanel.add(genderField);
 
@@ -283,7 +283,7 @@ public class ResidentPopup extends JDialog {
         idCardLabel.setBounds(20, 330, getWidth() / 4, 40);
         contentPanel.add(idCardLabel);
 
-        idCardField = new JTextField();
+        idCardField = new JTextField(oldIdCard);
         idCardField.setBounds(10 + getWidth() / 4 + 5, 330, 300, 40);
         contentPanel.add(idCardField);
 

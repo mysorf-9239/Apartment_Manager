@@ -1,5 +1,6 @@
 package controller;
 
+import model.HouseholdMember;
 import model.Resident;
 
 import java.sql.*;
@@ -48,6 +49,9 @@ public class DatabaseConnected {
         }
     }
 
+
+    /*  RESIDENT  */
+
     // Lấy dữ liệu cư dân và trả về dưới dạng ArrayList<Object[]>
     public static ArrayList<Object[]> getResidentsData() {
         String query = "SELECT id, full_name, date_of_birth, gender, id_card, is_temp_resident, household_id FROM residents";
@@ -90,6 +94,7 @@ public class DatabaseConnected {
         return residentsData;
     }
 
+    // Thêm nhân khẩu
     public static void addResident(String name, String birthDate, String gender, String idCard) {
         String query = "INSERT INTO residents (full_name, date_of_birth, gender, id_card) VALUES (?, ?, ?, ?)";
         Connection connection = null;
@@ -135,6 +140,7 @@ public class DatabaseConnected {
         }
     }
 
+    // Xoá nhân khẩu
     public static boolean deleteResident(int residentID) {
         String sql = "DELETE FROM residents WHERE id = ?";
 
@@ -188,6 +194,9 @@ public class DatabaseConnected {
                 householdsData.add(row);
                 index++;
             }
+
+            rs.close();
+            stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (DatabaseConnectionException e) {
@@ -197,6 +206,8 @@ public class DatabaseConnected {
         return householdsData;
     }
 
+
+    /*  HOUSEHOLD  */
 
     // Phương thức tìm thông tin của chủ hộ dựa trên họ tên và CCCD
     public static Resident getHeadOfHouseholdInfo(String fullName, String idCard) throws SQLException {
@@ -228,7 +239,6 @@ public class DatabaseConnected {
             throw new RuntimeException(e);
         }
     }
-
 
     // Phương thức thêm hộ khẩu mới vào cơ sở dữ liệu và trả về household_id vừa được tạo
     public static int addHousehold(String address, int headOfHouseholdId) throws SQLException {
@@ -300,7 +310,177 @@ public class DatabaseConnected {
         }
     }
 
+    // Phương thức lấy thông tin cư dân theo ID
+    public static Resident getResidentById(int residentId) {
+        String query = "SELECT * FROM residents WHERE id = ?";
+        Resident resident = null;
+
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, residentId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                resident = new Resident(
+                        rs.getInt("id"),
+                        rs.getString("full_name"),
+                        rs.getString("date_of_birth"),
+                        rs.getString("gender"),
+                        rs.getString("id_card")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+        return resident;
+    }
+
+    // Phương thức lấy thành viên vs quan hệ
+    public static ArrayList<HouseholdMember> getHouseholdMembersWithRelationships(int householdID) {
+        ArrayList<HouseholdMember> members = new ArrayList<>();
+        String query = "SELECT r.*, h.relationship_type FROM relationships h  JOIN residents r ON h.resident_id = r.id  WHERE h.household_id = ?";
+
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, householdID);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                // Lấy thông tin resident từ kết quả truy vấn
+                Resident resident = new Resident(
+                        rs.getInt("id"),
+                        rs.getString("full_name"),
+                        rs.getString("date_of_birth"),
+                        rs.getString("gender"),
+                        rs.getString("id_card")
+                );
+
+                // Lấy relationship_type từ kết quả truy vấn
+                String relationshipType = rs.getString("relationship_type");
+
+                // Thêm đối tượng HouseholdMember vào danh sách
+                members.add(new HouseholdMember(resident, relationshipType));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return members;
+    }
+
+    // Thêm quan hệ
+    public static boolean addRelationship(int residentID, int headOfHouseholdID, String relationshipType, int householdID) {
+        String query = "INSERT INTO relationships (resident_id, head_of_household_id, relationship_type, household_id) VALUES (?, ?, ?, ?)";
+
+        try (Connection connection = DatabaseConnected.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+
+            // Set the query parameters
+            stmt.setInt(1, residentID);
+            stmt.setInt(2, headOfHouseholdID);
+            stmt.setString(3, relationshipType);
+            stmt.setInt(4, householdID);
+
+            // Execute the update
+            stmt.executeUpdate();
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
 
 
+    /*  FEE  */
+    public static ArrayList<Object[]> getFeesData() {
+        ArrayList<Object[]> feesData = new ArrayList<>();
+        String query = "SELECT id, fee_name, amount, fee_description, created_at, updated_at, status FROM fees"; // Giả định tên bảng là 'fees'
+
+        try (Connection conn = DatabaseConnected.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            int index = 0;
+            while (rs.next()) {
+                Object[] row = new Object[8];
+                row[0] = String.format("%02d", index + 1);
+                row[1] = rs.getInt("id");
+                row[2] = rs.getString("fee_name");
+                row[3] = rs.getDouble("amount");
+                row[4] = rs.getString("fee_description");
+                row[5] = rs.getTimestamp("created_at");
+                row[6] = rs.getTimestamp("updated_at");
+                row[7] = rs.getString("status");
+
+                feesData.add(row);
+                index++;
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return feesData;
+    }
+
+    public static int addFee(String feeName, String feeDescription, double amount) {
+        String query = "INSERT INTO fees (fee_name, fee_description, amount) VALUES (?, ?, ?)";
+        int generatedId = -1;
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, feeName);
+            pstmt.setString(2, feeDescription);
+            pstmt.setDouble(3, amount);
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        generatedId = generatedKeys.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return generatedId;
+    }
+
+    public static boolean editFee(int feeId, String feeName, String feeDescription, double amount) {
+        String query = "UPDATE fees SET fee_name = ?, fee_description = ?, amount = ? WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, feeName);
+            pstmt.setString(2, feeDescription);
+            pstmt.setDouble(3, amount);
+            pstmt.setInt(4, feeId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /*  PAYMENT  */
 
 }
