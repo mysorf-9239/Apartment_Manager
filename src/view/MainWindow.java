@@ -3,7 +3,7 @@ package view;
 import util.ImageLoader;
 import model.fees.FeesWindow;
 import model.households.HouseholdsWindow;
-import view.window.PaymentsWindow;
+import model.payments.PaymentWindow;
 import model.residents.ResidentsWindow;
 
 import javax.swing.*;
@@ -83,7 +83,7 @@ public class MainWindow extends JPanel {
         contentPanel.add(new ResidentsWindow(), "Residents");
         contentPanel.add(new HouseholdsWindow(), "Households");
         contentPanel.add(new FeesWindow(), "Fees");
-        contentPanel.add(new PaymentsWindow(), "Payments");
+        contentPanel.add(new PaymentWindow(), "Payments");
 
         // Initially set to a blank panel
         JPanel blankPanel = new JPanel();

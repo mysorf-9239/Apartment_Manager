@@ -1,4 +1,4 @@
-package model.fees;
+package model.payments;
 
 import controller.DatabaseConnected;
 
@@ -8,38 +8,38 @@ import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-public class FeesPopup extends JDialog {
-    public FeesWindow feesWindow;
+public class PaymentPopup extends JDialog {
+    public PaymentWindow paymentWindow;
 
-    private JTextField feeNameField;
+    private JTextField paymentNameField;
     private JTextField amountField;
     private JTextField descriptionField;
 
-    public static final int VIEW_FEE = 1;
-    public static final int ADD_FEE = 2;
-    public static final int EDIT_FEE = 3;
+    public static final int VIEW_PAYMENT = 1;
+    public static final int ADD_PAYMENT = 2;
+    public static final int EDIT_PAYMENT = 3;
 
-    public FeesPopup(JFrame parent, int popupName, FeesWindow feesWindow, int editIndex) {
+    public PaymentPopup(JFrame parent, int popupName, PaymentWindow paymentWindow, int editIndex) {
         super(parent, "Popup", true);
         setUndecorated(true);
         setSize((int)(parent.getWidth() * 0.4), (int)(parent.getHeight() * 0.8));
         setLocationRelativeTo(parent);
 
-        this.feesWindow = feesWindow;
+        this.paymentWindow = paymentWindow;
 
         JPanel popupPanel = new JPanel();
         popupPanel.setLayout(null);
         popupPanel.setBackground(Color.WHITE);
 
         switch (popupName) {
-            case VIEW_FEE:
-                viewFeeContent(popupPanel, editIndex);
+            case VIEW_PAYMENT:
+                viewPaymentContent(popupPanel, editIndex);
                 break;
-            case ADD_FEE:
-                addFeeContent(popupPanel);
+            case ADD_PAYMENT:
+                addPaymentContent(popupPanel);
                 break;
-            case EDIT_FEE:
-                editFeeContent(popupPanel, editIndex);
+            case EDIT_PAYMENT:
+                editPaymentContent(popupPanel, editIndex);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid popup type");
@@ -48,16 +48,16 @@ public class FeesPopup extends JDialog {
         setContentPane(popupPanel);
     }
 
-    private void viewFeeContent(JPanel panel, int viewIndex) {
+    private void viewPaymentContent(JPanel panel, int viewIndex) {
         panel.setLayout(null);
 
         JLabel feeNameLabel = new JLabel("Tên Khoản Phí:");
         feeNameLabel.setBounds(20, 50, 100, 30);
         panel.add(feeNameLabel);
 
-        feeNameField = new JTextField();
-        feeNameField.setBounds(130, 50, 200, 30);
-        panel.add(feeNameField);
+        paymentNameField = new JTextField();
+        paymentNameField.setBounds(130, 50, 200, 30);
+        panel.add(paymentNameField);
 
         JButton cancelButton = new JButton("Hủy");
         cancelButton.setBounds(220, 200, 100, 30);
@@ -65,7 +65,7 @@ public class FeesPopup extends JDialog {
         panel.add(cancelButton);
     }
 
-    private void addFeeContent(JPanel panel) {
+    private void addPaymentContent(JPanel panel) {
         panel.setLayout(null);
 
         // Header
@@ -91,9 +91,9 @@ public class FeesPopup extends JDialog {
         feeNameLabel.setBounds(20, 50, 100, 40);
         contentPanel.add(feeNameLabel);
 
-        feeNameField = new JTextField();
-        feeNameField.setBounds(130, 50, 200, 40);
-        contentPanel.add(feeNameField);
+        paymentNameField = new JTextField();
+        paymentNameField.setBounds(130, 50, 200, 40);
+        contentPanel.add(paymentNameField);
 
         // Gợi ý
         JLabel nameHintLabel = new JLabel("Tên của khoản phí");
@@ -142,7 +142,7 @@ public class FeesPopup extends JDialog {
         // Nút Lưu
         JButton continueButton = new JButton("Lưu");
         continueButton.setPreferredSize(new Dimension(60, 40));
-        continueButton.addActionListener(e -> saveAddFee());
+        continueButton.addActionListener(e -> saveAddPayment());
         footerPanel.add(continueButton);
 
         // Nút Hủy
@@ -154,12 +154,12 @@ public class FeesPopup extends JDialog {
         panel.add(footerPanel);
     }
 
-    private void saveAddFee() {
-        String feeName = feeNameField.getText().trim();
-        String feeDescription = descriptionField.getText().trim();
+    private void saveAddPayment() {
+        String paymentName = paymentNameField.getText().trim();
+        String paymentDescription = descriptionField.getText().trim();
         String amountStr = amountField.getText().trim();
 
-        if (feeName.isEmpty() || feeDescription.isEmpty() || amountStr.isEmpty()) {
+        if (paymentName.isEmpty() || paymentDescription.isEmpty() || amountStr.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -172,15 +172,15 @@ public class FeesPopup extends JDialog {
             return;
         }
 
-        int generatedId = DatabaseConnected.addFee(feeName, feeDescription, amount);
+        int generatedId = DatabaseConnected.addFee(paymentName, paymentDescription, amount);
 
         if (generatedId != -1) {
             Object[] newFee = new Object[8];
-            newFee[0] = String.format("%02d", feesWindow.data.size() + 1);
+            newFee[0] = String.format("%02d", paymentWindow.data.size() + 1);
             newFee[1] = generatedId;
-            newFee[2] = feeName;
+            newFee[2] = paymentName;
             newFee[3] = amount;
-            newFee[4] = feeDescription;
+            newFee[4] = paymentDescription;
 
             Timestamp createdAt = new Timestamp(System.currentTimeMillis());
             newFee[5] = createdAt;
@@ -188,16 +188,16 @@ public class FeesPopup extends JDialog {
 
             newFee[7] = "active";
 
-            feesWindow.data.add(newFee);
-            feesWindow.updateTable();
+            paymentWindow.data.add(newFee);
+            paymentWindow.updateTable();
             dispose();
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình lưu phí.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void editFeeContent(JPanel panel, int editIndex) {
-        Object[] oldData = feesWindow.data.get(editIndex);
+    private void editPaymentContent(JPanel panel, int editIndex) {
+        Object[] oldData = paymentWindow.data.get(editIndex);
 
         // Lấy các giá trị cũ
         int feeId = (int) oldData[1];
@@ -294,7 +294,7 @@ public class FeesPopup extends JDialog {
         JButton saveButton = new JButton("Lưu");
         saveButton.setPreferredSize(new Dimension(60, 40));
         saveButton.addActionListener(e -> {
-            saveEditFee(editIndex, feeId, feeNameField.getText(), descriptionField.getText(), amountField.getText());
+            saveEditPayment(editIndex, feeId, feeNameField.getText(), descriptionField.getText(), amountField.getText());
             dispose();
         });
         footerPanel.add(saveButton);
@@ -308,7 +308,7 @@ public class FeesPopup extends JDialog {
         panel.add(footerPanel);
     }
 
-    private void saveEditFee(int editIndex, int feeId, String newFeeName, String newDescription, String newAmountStr) {
+    private void saveEditPayment(int editIndex, int feeId, String newFeeName, String newDescription, String newAmountStr) {
         if (newFeeName.isEmpty() || newDescription.isEmpty() || newAmountStr.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
@@ -325,7 +325,7 @@ public class FeesPopup extends JDialog {
         boolean success = DatabaseConnected.editFee(feeId, newFeeName, newDescription, newAmount);
 
         if (success) {
-            Object[] updatedFee = feesWindow.data.get(editIndex);
+            Object[] updatedFee = paymentWindow.data.get(editIndex);
 
             updatedFee[2] = newFeeName;
             updatedFee[3] = newAmount;
@@ -334,7 +334,7 @@ public class FeesPopup extends JDialog {
             Timestamp createdAt = new Timestamp(System.currentTimeMillis());
             updatedFee[6] = createdAt;
 
-            feesWindow.updateTable();
+            paymentWindow.updateTable();
             dispose();
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình lưu phí.", "Lỗi", JOptionPane.ERROR_MESSAGE);

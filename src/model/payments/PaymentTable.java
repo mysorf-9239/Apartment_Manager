@@ -1,9 +1,11 @@
-package model.fees;
+package model.payments;
 
 import controller.DatabaseConnected;
-import model.households.HouseholdPopup;
+import model.Fee;
+import model.Payment;
 import view.table.TableHeader;
 import util.ImageLoader;
+import model.Household;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,8 +20,8 @@ import java.util.Date;
 import java.util.Locale;
 
 
-public class FeesTable extends JPanel {
-    FeesWindow feesWindow;
+public class PaymentTable extends JPanel {
+    PaymentWindow paymentWindow;
 
     private ArrayList<Object[]> data;
     private String[] columnNames;
@@ -28,13 +30,13 @@ public class FeesTable extends JPanel {
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
-    public FeesTable(ArrayList<Object[]> data, String[] columnNames, FeesWindow feesWindow) {
-        this.feesWindow = feesWindow;
+    public PaymentTable(ArrayList<Object[]> data, String[] columnNames, PaymentWindow paymentWindow) {
+        this.paymentWindow = paymentWindow;
 
         this.data = data;
         this.columnNames = columnNames;
 
-        columnX = FeesWindow.getColumnX();
+        columnX = PaymentWindow.getColumnX();
         loadImages();
         setLayout(null);
         createButtons();
@@ -101,48 +103,51 @@ public class FeesTable extends JPanel {
     }
 
     private void viewRow(int rowIndex) {
-        int viewIndex = rowIndex + (feesWindow.currentPage - 1) * 10;
+        int viewIndex = rowIndex + (paymentWindow.currentPage - 1) * 10;
 
-        FeesPopup popup = new FeesPopup(
+        PaymentPopup popup = new PaymentPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
-                FeesPopup.VIEW_FEE,
-                feesWindow,
+                PaymentPopup.VIEW_PAYMENT,
+                paymentWindow,
                 viewIndex
         );
         popup.setVisible(true);
     }
 
     private void editRow(int rowIndex) {
-        int editIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
+        int editIndex = rowIndex + (paymentWindow.currentPage - 1) * paymentWindow.rowsPerPage;
 
-        FeesPopup popup = new FeesPopup(
+        PaymentPopup popup = new PaymentPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
-                FeesPopup.EDIT_FEE,
-                feesWindow,
+                PaymentPopup.EDIT_PAYMENT,
+                paymentWindow,
                 editIndex
         );
         popup.setVisible(true);
     }
 
     private void deleteRow(int rowIndex) {
-        int deleteIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
+        int deleteIndex = rowIndex + (paymentWindow.currentPage - 1) * paymentWindow.rowsPerPage;
 
-        Object[] deleteData = feesWindow.data.get(deleteIndex);
+        Object[] deleteData = paymentWindow.data.get(deleteIndex);
 
-        int feeID = Integer.parseInt(deleteData[1].toString());
+        int paymentID = Integer.parseInt(deleteData[1].toString());
 
-        boolean success = DatabaseConnected.deleteFee(feeID);
+        /*
+        boolean success = DatabaseConnected.deletePayment(paymentID);
 
         if (success) {
-            feesWindow.data.remove(deleteIndex);
+            paymentWindow.data.remove(deleteIndex);
             System.out.println("Data deleted successfully.");
 
-            feesWindow.updateTable();
+            paymentWindow.updateTable();
 
             JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
+
+         */
     }
 
     private void drawTable(Graphics g) {
@@ -151,7 +156,7 @@ public class FeesTable extends JPanel {
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Vẽ tiêu đề
-        TableHeader.drawHeaderFees(g, columnNames, colWidth, getWidth());
+        TableHeader.drawHeaderPayment(g, columnNames, colWidth, getWidth());
 
         // Vẽ các hàng
         drawRow(g);
@@ -177,30 +182,38 @@ public class FeesTable extends JPanel {
     private void drawRow(Graphics g) {
         int rowHeight = 50;
 
-        // Vẽ dữ liệu hàng
         for (int i = 0; i < data.size(); i++) {
             Object[] rowData = data.get(i);
 
             // Vẽ chỉ số hàng (STT)
             g.drawString(String.valueOf(rowData[0]), columnX[0], (i + 1) * rowHeight + 30);
 
-            // Vẽ nội dung hàng (Tên phí)
-            g.drawString((String) rowData[2], columnX[1], (i + 1) * rowHeight + 30);
+            // Vẽ tên chủ hộ
+            Household household = (Household) rowData[2];
+            g.drawString(household.head_of_household.full_name, columnX[1], (i + 1) * rowHeight + 30);
 
-            // Vẽ số tiền
-            Double amount = (Double) rowData[3];
-            String formattedAmount = formatCurrency(amount);
-            g.drawString(formattedAmount, columnX[2], (i + 1) * rowHeight + 30);
+            // Vẽ số tiền phải nộp
+            Fee fee = (Fee) rowData[3];
+            g.drawString(String.valueOf(fee.amount), columnX[2], (i + 1) * rowHeight + 30);
 
-            // Vẽ mô tả
-            g.drawString((String) rowData[4], columnX[3], (i + 1) * rowHeight + 30);
+            // Vẽ tổng số tiền đã nộp
+            ArrayList<Payment> payments = (ArrayList<Payment>) rowData[9];
+            double totalAmountPaid = 0.0;
 
-            // Vẽ ngày tạo
-            String createdAt = rowData[5].toString();
-            String formattedDate = formatDate(createdAt);
-            g.drawString(formattedDate, columnX[4], (i + 1) * rowHeight + 30);
+            // Tính tổng số tiền đã nộp
+            for (Payment payment : payments) {
+                totalAmountPaid += payment.payment_amount;
+            }
+
+            // Vẽ tổng số tiền lên giao diện
+            g.drawString(formatCurrency(totalAmountPaid), columnX[3], (i + 1) * rowHeight + 30);
+
+
+            // Vẽ hạn nộp
+            g.drawString(formatDate((Date) rowData[5]), columnX[4], (i + 1) * rowHeight + 30);
         }
     }
+
 
     private String formatCurrency(Double amount) {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.getDefault());
@@ -209,19 +222,10 @@ public class FeesTable extends JPanel {
         return numberFormat.format(amount) + " đ";
     }
 
-    private String formatDate(String dateString) {
-        try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date date = inputFormat.parse(dateString);
-
-            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return dateString;
-        }
+    private String formatDate(Date date) {
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
+        return outputFormat.format(date);
     }
-
 
 
     @Override

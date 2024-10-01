@@ -1,7 +1,6 @@
 package controller;
 
-import model.HouseholdMember;
-import model.Resident;
+import model.*;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -480,7 +479,216 @@ public class DatabaseConnected {
         }
     }
 
+    public static boolean deleteFee(int feeID) {
+        String query = "DELETE FROM fees WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, feeID);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /*  PAYMENT  */
+    //Lấy data cho dropdown
+    public static ArrayList<Object[]> getFeesDropdown() {
+        ArrayList<Object[]> fees = new ArrayList<>();
+        String query = "SELECT id, fee_name FROM fees";
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                int fee_id = resultSet.getInt("id");
+                String fee_name = resultSet.getString("fee_name");
+                fees.add(new Object[]{fee_id, fee_name});
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return fees;
+    }
+
+    // Phương thức lấy thông tin từ bảng households theo household_id
+    private static Household getHouseholdById(int householdId, Connection conn) throws SQLException {
+        String sql = "SELECT `id`, `address`, `head_of_household` FROM `households` WHERE id = ?";
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, householdId);
+        ResultSet rs = pstmt.executeQuery();
+
+        Household household = null;
+        if (rs.next()) {
+            int headOfHouseholdId = rs.getInt("head_of_household");
+
+            // Lấy thông tin của head_of_household từ bảng residents
+            Resident headOfHousehold = getResidentById(headOfHouseholdId);
+
+            // Tạo đối tượng Household bao gồm cả đối tượng Resident cho head_of_household
+            household = new Household(rs.getInt("id"), rs.getString("address"), headOfHousehold);
+        }
+        rs.close();
+        pstmt.close();
+        return household;
+    }
+
+    // Phương thức lấy thông tin từ bảng fees theo fee_id
+    private static Fee getFeeById(int feeId, Connection conn) throws SQLException {
+        String sql = "SELECT `id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status` FROM `fees` WHERE id = ?";
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, feeId);
+        ResultSet rs = pstmt.executeQuery();
+
+        Fee fee = null;
+        if (rs.next()) {
+            fee = new Fee(rs.getInt("id"), rs.getString("fee_name"), rs.getString("fee_description"),
+                    rs.getDouble("amount"), rs.getTimestamp("created_at"),
+                    rs.getTimestamp("updated_at"), rs.getString("status"));
+        }
+        rs.close();
+        pstmt.close();
+        return fee;
+    }
+
+    // Method to get all payments for a specific household_id and fee_id
+    private static ArrayList<Payment> getPaymentsByHouseholdAndFee(int householdId, int feeId, Connection conn) throws SQLException {
+        ArrayList<Payment> paymentRecords = new ArrayList<>();
+
+        String sql = "SELECT `id`, `payment_amount`, `payment_date`, `payment_method`, `note` FROM `payments` WHERE household_id = ? AND fee_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    // Tạo một đối tượng Payment mới
+                    Payment payment = new Payment(
+                            rs.getInt("id"),
+                            rs.getInt("payment_amount"),
+                            rs.getTimestamp("payment_date"),
+                            rs.getString("payment_method"),
+                            rs.getString("note")
+                    );
+                    paymentRecords.add(payment);
+                }
+            }
+        }
+        return paymentRecords;
+    }
+
+
+    // Phương thức mới lấy thông tin từ bảng payments dựa trên household_id và fee_id
+    private static Payment getPaymentByHouseholdAndFeeId(int householdId, int feeId, Connection conn) throws SQLException {
+        PreparedStatement paymentStmt = null;
+        ResultSet paymentRs = null;
+        Payment payment = null;
+
+        try {
+            String paymentSql = "SELECT `id`, `payment_amount`, `payment_date`, `payment_method`, `note` FROM `payments` WHERE household_id = ? AND fee_id = ?";
+            paymentStmt = conn.prepareStatement(paymentSql);
+            paymentStmt.setInt(1, householdId);
+            paymentStmt.setInt(2, feeId);
+            paymentRs = paymentStmt.executeQuery();
+
+            if (paymentRs.next()) {
+                payment = new Payment(
+                        paymentRs.getInt("id"),
+                        paymentRs.getInt("payment_amount"),
+                        paymentRs.getTimestamp("payment_date"),
+                        paymentRs.getString("payment_method"),
+                        paymentRs.getString("note")
+                );
+            }
+
+        } finally {
+            if (paymentRs != null) try { paymentRs.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (paymentStmt != null) try { paymentStmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+
+        return payment;
+    }
+
+    // Lấy data cho payment của khoản phí có fee_id
+    public static ArrayList<Object[]> getPaymentData(int fee_Id) {
+        ArrayList<Object[]> paymentData = new ArrayList<>();
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        int index = 1;
+
+        try {
+            // Kết nối cơ sở dữ liệu
+            conn = DatabaseConnected.getConnection();
+
+            // Bước 1: Lấy dữ liệu từ bảng households_fees theo fee_id
+            String sql = "SELECT `id`, `household_id`, `fee_id`, `amount_due`, `due_date`, `status`, `created_at`, `updated_at` FROM `households_fees` WHERE fee_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, fee_Id);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Object[] paymentRecord = new Object[10];
+
+                // 0: Index
+                paymentRecord[0] = index++;
+
+                // 1: id (households_fees)
+                int householdFeeId = rs.getInt("id");
+                paymentRecord[1] = householdFeeId;
+
+                // 2: Lấy household_id -> Lấy thông tin từ bảng households
+                int householdId = rs.getInt("household_id");
+                Household household = getHouseholdById(householdId, conn);
+                paymentRecord[2] = household;
+
+                // 3: Lấy fee_id -> Lấy thông tin từ bảng fees
+                int feeId = rs.getInt("fee_id");
+                Fee fee = getFeeById(feeId, conn);
+                paymentRecord[3] = fee;
+
+                // 4: amount_due
+                paymentRecord[4] = rs.getDouble("amount_due");
+
+                // 5: due_date
+                paymentRecord[5] = rs.getDate("due_date");
+
+                // 6: status
+                paymentRecord[6] = rs.getString("status");
+
+                // 7: created_at
+                paymentRecord[7] = rs.getTimestamp("created_at");
+
+                // 8: updated_at
+                paymentRecord[8] = rs.getTimestamp("updated_at");
+
+                // 9: Lấy thông tin thanh toán từ bảng payments qua phương thức mới
+                ArrayList<Payment> payments = getPaymentsByHouseholdAndFee(householdId, feeId, conn);
+                paymentRecord[9] = payments;
+
+                // Thêm record vào danh sách
+                paymentData.add(paymentRecord);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+
+        return paymentData;
+    }
+
 
 }
