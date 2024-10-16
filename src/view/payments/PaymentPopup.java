@@ -489,11 +489,11 @@ public class PaymentPopup extends JDialog {
 
         try {
             boolean success = DatabaseConnected.updatePayment(paymentId, amount, method);
-            paymentWindow.updatePaymentX();
-
+            paymentWindow.updatePaymentData();
 
             if (success) {
                 JOptionPane.showMessageDialog(null, "Cập nhật thành công!");
+                this.dispose();
             } else {
                 JOptionPane.showMessageDialog(null, "Cập nhật không thành công!");
             }

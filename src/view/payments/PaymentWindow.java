@@ -117,7 +117,7 @@ public class PaymentWindow extends JPanel {
     }
 
     // Hàm để cập nhật dữ liệu bảng khi chọn khoản phí mới
-    private void updatePaymentData() {
+    public void updatePaymentData() {
         data = DatabaseConnected.getPaymentData(selectedFeeId);
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPage = 1;
@@ -180,9 +180,4 @@ public class PaymentWindow extends JPanel {
     public static int[] getColumnX() {
         return columnX;
     }
-
-    public void updatePaymentX() {
-        data = DatabaseConnected.getPaymentData(selectedFeeId);
-    }
-
 }

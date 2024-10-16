@@ -762,7 +762,6 @@ public class DatabaseConnected {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        int index = 1;
 
         try {
             // Kết nối cơ sở dữ liệu
@@ -774,6 +773,7 @@ public class DatabaseConnected {
             pstmt.setInt(1, fee_Id);
             rs = pstmt.executeQuery();
 
+            int index = 0;
             while (rs.next()) {
                 Object[] paymentRecord = new Object[10];
 
@@ -815,6 +815,7 @@ public class DatabaseConnected {
 
                 // Thêm record vào danh sách
                 paymentData.add(paymentRecord);
+                index++;
             }
 
         } catch (SQLException e) {
