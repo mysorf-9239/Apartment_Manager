@@ -8,7 +8,6 @@ import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -18,12 +17,19 @@ import static controller.DatabaseConnected.addPayment;
 public class PaymentPopup extends JDialog {
     public PaymentWindow paymentWindow;
 
+    JPanel editPanel;
+
     private JTextField householdNameField;
     private JTextField cccdField;
     private JTextField amountField;
     private JComboBox<String> feeDropdown;
     private JComboBox<String> paymentMethodDropdown;
     private JTextField statusField;
+
+    // Edit
+    JComboBox<Integer> editIdDropdown;
+    JTextField editAmountField;
+    JComboBox<String> editMethodDropdown;
 
     private JTextField paymentNameField;
 
@@ -151,7 +157,7 @@ public class PaymentPopup extends JDialog {
 
         statusField = new JTextField();
         statusField.setBounds(130, 270, 200, 40);
-        statusField.setEditable(false); // Chỉ cho phép xem
+        statusField.setEditable(false);
         contentPanel.add(statusField);
         // Hiển thị giá trị cũ
         statusField.setText(oldData[6].toString());
@@ -389,7 +395,7 @@ public class PaymentPopup extends JDialog {
         ArrayList<Payment> payments = (ArrayList<Payment>) oldData[9];
 
         // Bảng để hiển thị các lần thanh toán
-        String[] paymentColumnNames = {"ID", "Số tiền", "Ngày thanh toán", "Phương thức", "Sửa"};
+        String[] paymentColumnNames = {"ID", "Số tiền", "Ngày thanh toán", "Phương thức", "Ghi chú"};
         DefaultTableModel paymentTableModel = new DefaultTableModel(paymentColumnNames, 0);
 
         // Thêm dữ liệu vào bảng
@@ -399,7 +405,7 @@ public class PaymentPopup extends JDialog {
                     payment.payment_amount,
                     payment.payment_date,
                     payment.payment_method,
-                    "Sửa"
+                    payment.note
             };
             paymentTableModel.addRow(rowData);
         }
@@ -411,6 +417,53 @@ public class PaymentPopup extends JDialog {
         contentPanel.add(scrollPane);
 
         // Phần dùng để hiển thị phần nội dung để chỉnh sửa
+        editPanel = new JPanel();
+        editPanel.setLayout(null);
+        editPanel.setBounds(20, 310, 400, 150);
+
+        // Title
+        JLabel titleEditLabel = new JLabel("Cập nhật khoản thanh toán");
+        titleEditLabel.setBounds(110, 5, 200, 30);
+        editPanel.add(titleEditLabel);
+
+        // Dropdown cho ID
+        JLabel idLabel = new JLabel("ID");
+        idLabel.setBounds(30, 30, 30, 30);
+        editPanel.add(idLabel);
+
+        editIdDropdown = new JComboBox<>();
+        for (Payment payment : payments) {
+            editIdDropdown.addItem(payment.id);
+        }
+        editIdDropdown.setBounds(10, 70, 60, 20);
+        editPanel.add(editIdDropdown);
+
+        // Các trường cho số tiền và phương thức
+        JLabel amountLabel = new JLabel("Số tiền:");
+        amountLabel.setBounds(100, 40, 100, 40);
+        editPanel.add(amountLabel);
+
+        editAmountField = new JTextField();
+        editAmountField.setBounds(200, 40, 200, 40);
+        editPanel.add(editAmountField);
+
+        // Dropdown cho phương thức
+        JLabel methodLabel = new JLabel("Phương thức:");
+        methodLabel.setBounds(100, 80, 100, 40);
+        editPanel.add(methodLabel);
+
+        editMethodDropdown = new JComboBox<>(new String[]{"Tiền mặt", "Chuyển khoản", "Thẻ"});
+        editMethodDropdown.setBounds(200, 80, 200, 40);
+        editPanel.add(editMethodDropdown);
+
+        // Nút Cập nhật
+        JButton saveButton = new JButton("Cập nhật");
+        saveButton.setBounds(160, 120, 80, 30);
+        saveButton.addActionListener(e -> { saveEditPayment(); });
+        editPanel.add(saveButton);
+
+
+        contentPanel.add(editPanel);
 
         panel.add(contentPanel);
 
@@ -429,10 +482,27 @@ public class PaymentPopup extends JDialog {
         panel.add(footerPanel);
     }
 
-    private void saveEditPayment(int paymentId) {
+    private void saveEditPayment() {
+        int paymentId = (int) editIdDropdown.getSelectedItem();
+        int amount = Integer.parseInt(editAmountField.getText());
+        String method = (String) editMethodDropdown.getSelectedItem();
 
-        System.out.println("Edit");
+        try {
+            boolean success = DatabaseConnected.updatePayment(paymentId, amount, method);
+            paymentWindow.updatePaymentX();
+
+
+            if (success) {
+                JOptionPane.showMessageDialog(null, "Cập nhật thành công!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Cập nhật không thành công!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật!");
+        }
     }
+
 
     private String formatCurrency(Double amount) {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.getDefault());

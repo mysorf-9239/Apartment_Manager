@@ -1096,4 +1096,20 @@ public class DatabaseConnected {
         return feeName;
     }
 
+    public static boolean updatePayment(int paymentId, int amount, String method) throws SQLException {
+        String query = "UPDATE payments SET payment_amount = ?, payment_method = ? WHERE id = ?";
+
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, amount);
+            preparedStatement.setString(2, method);
+            preparedStatement.setInt(3, paymentId);
+
+            return preparedStatement.executeUpdate() > 0;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

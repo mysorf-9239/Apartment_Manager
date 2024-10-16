@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import controller.DatabaseConnected;
+import model.Payment;
 import util.ImageLoader;
 
 public class PaymentWindow extends JPanel {
@@ -179,4 +180,9 @@ public class PaymentWindow extends JPanel {
     public static int[] getColumnX() {
         return columnX;
     }
+
+    public void updatePaymentX() {
+        data = DatabaseConnected.getPaymentData(selectedFeeId);
+    }
+
 }
