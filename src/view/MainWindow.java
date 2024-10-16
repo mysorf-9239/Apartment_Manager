@@ -1,10 +1,10 @@
 package view;
 
 import util.ImageLoader;
-import model.fees.FeesWindow;
-import model.households.HouseholdsWindow;
-import model.payments.PaymentWindow;
-import model.residents.ResidentsWindow;
+import view.fees.FeesWindow;
+import view.households.HouseholdsWindow;
+import view.payments.PaymentWindow;
+import view.residents.ResidentsWindow;
 
 import javax.swing.*;
 import java.awt.*;

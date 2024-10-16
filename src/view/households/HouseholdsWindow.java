@@ -1,4 +1,4 @@
-package model.fees;
+package view.households;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,32 +7,32 @@ import java.util.ArrayList;
 import controller.DatabaseConnected;
 import util.ImageLoader;
 
-public class FeesWindow extends JPanel {
-    private static final int[] columnX = {15, 80, 235, 330, 543, 660, 730, 800};
+public class HouseholdsWindow extends JPanel {
+    private static final int[] columnXHousehold = {15, 70, 475, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Tên Khoản Phí", "Số Tiền", "Miêu tả", "Thời gian tạo", "Xem", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Địa chỉ", "Chủ hộ", "Xem", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
 
     public int currentPage = 1;
-    public int rowsPerPage = 10;
+    private int rowsPerPage = 10;
     private int totalPages;
-    private FeesTable feesTable;
+    private HouseholdTable householdTable;
     private JPanel paginationPanel;
 
-    public FeesWindow() {
+    public HouseholdsWindow() {
         setLayout(null);
         loadImages();
 
-        // Tiêu đề
-        JLabel titleLabel = new JLabel("Quản lý khoản phí", SwingConstants.CENTER);
+        // Title
+        JLabel titleLabel = new JLabel("Quản lý hộ gia đình", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, 859, 30);
         add(titleLabel);
 
-        // Ô tìm kiếm
+        // Search Box
         JPanel searchBox = new JPanel();
         searchBox.setBounds(0, 40, 859, 30);
         searchBox.setLayout(null);
@@ -55,7 +55,7 @@ public class FeesWindow extends JPanel {
 
         add(searchBox);
 
-        // Nút thêm
+        // Add Button
         JPanel addPanel = new JPanel();
         addPanel.setBounds(0, 65, 859, 30);
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -64,27 +64,27 @@ public class FeesWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            FeesPopup popup = new FeesPopup((JFrame) SwingUtilities.getWindowAncestor(this), FeesPopup.ADD_FEE, this, -1);
+            HouseholdPopup popup = new HouseholdPopup((JFrame) SwingUtilities.getWindowAncestor(this), HouseholdPopup.ADD_HOUSEHOLD, this, -1);
             popup.show();
         });
         addPanel.add(addButton);
 
         add(addPanel);
 
-        // Lấy dữ liệu từ cơ sở dữ liệu
+        // Retrieve data from the database
         DatabaseConnected db = new DatabaseConnected();
-        data = db.getFeesData();
+        data = db.getHouseholdsData();
 
-        // Tính tổng số trang
+        // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPageData = getPageData(currentPage);
 
-        // Bảng phí
-        feesTable = new FeesTable(currentPageData, columnNames, this);
-        feesTable.setBounds(0, 100, 859, 550);
-        add(feesTable);
+        // Custom Table
+        householdTable = new HouseholdTable(currentPageData, columnNames, this);
+        householdTable.setBounds(0, 100, 859, 550);
+        add(householdTable);
 
-        // Bảng phân trang
+        // Pagination Panel
         paginationPanel = new JPanel();
         paginationPanel.setBounds(0, 650, 859, 40);
         paginationPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -104,33 +104,33 @@ public class FeesWindow extends JPanel {
         return new ArrayList<>(data.subList(start, end));
     }
 
-    // Cập nhật bảng và phân trang
+    // Cập nhật bảng
+    public void updateTable() {
+        currentPageData = getPageData(currentPage);
+        householdTable.updateTableData(currentPageData);
+        updatePagination();
+    }
+
+    // Cập nhật phân trang
     private void updatePagination() {
         paginationPanel.removeAll();
 
-        // Nút Trước (trang trước)
         JButton previousButton = new JButton("Trước");
         previousButton.setEnabled(currentPage > 1);
         previousButton.addActionListener(e -> {
-            if (currentPage > 1) {
-                currentPage--;
-                updateTable();
-            }
+            currentPage--;
+            updateTable();
         });
         paginationPanel.add(previousButton);
 
-        // Nhãn hiển thị số trang
         JLabel pageLabel = new JLabel("Trang " + currentPage + " / " + totalPages);
         paginationPanel.add(pageLabel);
 
-        // Nút Tiếp theo (trang sau)
         JButton nextButton = new JButton("Tiếp theo");
         nextButton.setEnabled(currentPage < totalPages);
         nextButton.addActionListener(e -> {
-            if (currentPage < totalPages) {
-                currentPage++;
-                updateTable();
-            }
+            currentPage++;
+            updateTable();
         });
         paginationPanel.add(nextButton);
 
@@ -138,14 +138,17 @@ public class FeesWindow extends JPanel {
         paginationPanel.repaint();
     }
 
-    // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
-    public void updateTable() {
-        currentPageData = getPageData(currentPage);
-        feesTable.updateTableData(currentPageData);
-        updatePagination();
+    public static int[] getColumnXHousehold() {
+        return columnXHousehold;
     }
 
-    public static int[] getColumnX() {
-        return columnX;
+    public int getIndexById(int householdID) {
+        for (int i = 0; i < data.size(); i++) {
+            if (Integer.parseInt(data.get(i)[1].toString()) == householdID) {
+                return i;
+            }
+        }
+        return -1;
     }
+
 }

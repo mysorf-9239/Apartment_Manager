@@ -1,4 +1,4 @@
-package model.payments;
+package view.residents;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,35 +7,32 @@ import java.util.ArrayList;
 import controller.DatabaseConnected;
 import util.ImageLoader;
 
-public class PaymentWindow extends JPanel {
-    private static final int[] columnX = {18, 80, 238, 330, 543, 660, 730, 800};
+public class ResidentsWindow extends JPanel {
+    private static final int[] columnX = {15, 80, 400, 510, 590, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Chủ hộ", "Phải nộp", "Đã nộp", "Hạn nộp", "Xem", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Họ và tên", "Ngày sinh", "Giới tính", "CCCD", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
-    public ArrayList<Object[]> feesData;
 
     public int currentPage = 1;
-    public int rowsPerPage = 10;
+    private int rowsPerPage = 10;
     private int totalPages;
-    private PaymentTable paymentTable;
+    private ResidentTable residentTable;
     private JPanel paginationPanel;
-    private JComboBox<String> feeDropdown;
-    private int selectedFeeId;
 
-    public PaymentWindow() {
+    public ResidentsWindow() {
         setLayout(null);
         loadImages();
 
-        // Tiêu đề
-        JLabel titleLabel = new JLabel("Quản lý thanh toán", SwingConstants.CENTER);
+        // Title
+        JLabel titleLabel = new JLabel("Quản lý nhân khẩu", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, 859, 30);
         add(titleLabel);
 
-        // Ô tìm kiếm
+        // Search Box
         JPanel searchBox = new JPanel();
         searchBox.setBounds(0, 40, 859, 30);
         searchBox.setLayout(null);
@@ -58,55 +55,36 @@ public class PaymentWindow extends JPanel {
 
         add(searchBox);
 
-        // Nút thêm và dropdown chọn khoản phí
+        // Add Button
         JPanel addPanel = new JPanel();
         addPanel.setBounds(0, 65, 859, 30);
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-
-        // Lấy dữ liệu từ cơ sở dữ liệu
-        DatabaseConnected db = new DatabaseConnected();
-        feesData = db.getFeesDropdown();
-
-        // Tạo dropdown từ danh sách
-        String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
-        feeDropdown = new JComboBox<>(feeNames);
-        feeDropdown.setPreferredSize(new Dimension(150, 30));
-
-        // Gán selectedFeeId bằng khoản phí đầu tiên
-        selectedFeeId = (int) feesData.get(0)[0];
-
-        // Cập nhật dữ liệu mỗi khi chọn lại khoản phí
-        feeDropdown.addActionListener(e -> {
-            int selectedIndex = feeDropdown.getSelectedIndex();
-            selectedFeeId = (int) feesData.get(selectedIndex)[0];
-            updatePaymentData();
-        });
-        addPanel.add(feeDropdown);
 
         JButton addButton = new JButton("Thêm");
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            PaymentPopup popup = new PaymentPopup((JFrame) SwingUtilities.getWindowAncestor(this), PaymentPopup.ADD_PAYMENT, this, selectedFeeId);
+            ResidentPopup popup = new ResidentPopup((JFrame) SwingUtilities.getWindowAncestor(this), ResidentPopup.ADD_RESIDENT, this, -1);
             popup.show();
         });
         addPanel.add(addButton);
 
         add(addPanel);
 
-        // Lấy dữ liệu thanh toán từ cơ sở dữ liệu
-        data = db.getPaymentData(selectedFeeId);
+        // Retrieve data from the database
+        DatabaseConnected db = new DatabaseConnected();
+        data = db.getResidentsData();
 
-        // Tính tổng số trang
+        // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPageData = getPageData(currentPage);
 
-        // Bảng thanh toán
-        paymentTable = new PaymentTable(currentPageData, columnNames, this);
-        paymentTable.setBounds(0, 100, 859, 550);
-        add(paymentTable);
+        // Custom Table
+        residentTable = new ResidentTable(currentPageData, columnNames, this);
+        residentTable.setBounds(0, 100, 859, 550);
+        add(residentTable);
 
-        // Bảng phân trang
+        // Pagination Panel
         paginationPanel = new JPanel();
         paginationPanel.setBounds(0, 650, 859, 40);
         paginationPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -114,16 +92,6 @@ public class PaymentWindow extends JPanel {
 
         updatePagination();
     }
-
-    // Hàm để cập nhật dữ liệu bảng khi chọn khoản phí mới
-    private void updatePaymentData() {
-        DatabaseConnected db = new DatabaseConnected();
-        data = db.getPaymentData(selectedFeeId);
-        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
-        currentPage = 1;
-        updateTable();
-    }
-
 
     private void loadImages() {
         searchImage = ImageLoader.loadImage("/img/search.png", 30, 30);
@@ -170,10 +138,11 @@ public class PaymentWindow extends JPanel {
         paginationPanel.repaint();
     }
 
+
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
     public void updateTable() {
         currentPageData = getPageData(currentPage);
-        paymentTable.updateTableData(currentPageData);
+        residentTable.updateTableData(currentPageData);
         updatePagination();
     }
 

@@ -1,12 +1,17 @@
-package model.fees;
+package view.fees;
 
 import controller.DatabaseConnected;
+import model.Fee;
+import model.HouseholdInfo;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Objects;
 
 public class FeesPopup extends JDialog {
     public FeesWindow feesWindow;
@@ -14,10 +19,21 @@ public class FeesPopup extends JDialog {
     private JTextField feeNameField;
     private JTextField amountField;
     private JTextField descriptionField;
+    private JComboBox<String> feeTypeComboBox;
+    JCheckBox unpaidCheckBox;
+    JCheckBox paidCheckBox;
+    JCheckBox partialPaidCheckBox;
+    JCheckBox overdueCheckBox;
+    JCheckBox canceledCheckBox;
+    JCheckBox processingCheckBox;
+
+    private JTable householdTable;
 
     public static final int VIEW_FEE = 1;
     public static final int ADD_FEE = 2;
     public static final int EDIT_FEE = 3;
+
+    Fee fee;
 
     public FeesPopup(JFrame parent, int popupName, FeesWindow feesWindow, int editIndex) {
         super(parent, "Popup", true);
@@ -50,20 +66,162 @@ public class FeesPopup extends JDialog {
 
     private void viewFeeContent(JPanel panel, int viewIndex) {
         panel.setLayout(null);
+        fee = DatabaseConnected.getFeeById(viewIndex);
 
+
+        // Header
+        createHeaderPanel(panel);
+
+        // Content
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBounds(0, getHeight() / 10, getWidth(), getHeight() * 4 / 5);
+        panel.add(contentPanel);
+
+        // Phần hiển thị tên khoản phí, loại phí và các checkbox/dropdown
+        createFeeInfoSection(contentPanel);
+
+        // Footer
+        createFooterPanel(panel);
+    }
+
+    // Hàm tạo header
+    private void createHeaderPanel(JPanel panel) {
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(null);
+        headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
+        headerPanel.setBackground(Color.LIGHT_GRAY);
+
+        JLabel titleLabel = new JLabel("Xem Khoản Phí", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
+        headerPanel.add(titleLabel);
+
+        panel.add(headerPanel);
+    }
+
+    private void createFeeInfoSection(JPanel contentPanel) {
         JLabel feeNameLabel = new JLabel("Tên Khoản Phí:");
         feeNameLabel.setBounds(20, 50, 100, 30);
-        panel.add(feeNameLabel);
+        contentPanel.add(feeNameLabel);
 
-        feeNameField = new JTextField();
+        // Điền tên khoản phí từ database vào trường nhập liệu
+        feeNameField = new JTextField(fee.fee_name);
         feeNameField.setBounds(130, 50, 200, 30);
-        panel.add(feeNameField);
+        contentPanel.add(feeNameField);
+
+        JLabel feeTypeLabel = new JLabel("Loại Phí:");
+        feeTypeLabel.setBounds(20, 90, 100, 30);
+        contentPanel.add(feeTypeLabel);
+
+        // ComboBox cho loại phí (Chung, Riêng)
+        JComboBox<String> feeTypeComboBox = new JComboBox<>(new String[]{"Chung", "Riêng"});
+        feeTypeComboBox.setBounds(130, 90, 200, 30);
+        // Đặt giá trị loại phí từ database vào ComboBox
+        feeTypeComboBox.setSelectedItem(fee.type.equals("all") ? "Chung" : "Riêng");
+        contentPanel.add(feeTypeComboBox);
+        addStatusCheckboxes(contentPanel, fee);
+    }
+
+    // Hàm các checkbox
+    private void addStatusCheckboxes(JPanel contentPanel, Fee fee) {
+        JLabel statusLabel = new JLabel("Trạng Thái:");
+        statusLabel.setBounds(20, 130, 100, 30);
+        contentPanel.add(statusLabel);
+
+        unpaidCheckBox = new JCheckBox("Chưa thanh toán", true);
+        unpaidCheckBox.setBounds(130, 130, 200, 30);
+        unpaidCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(unpaidCheckBox);
+
+        paidCheckBox = new JCheckBox("Đã thanh toán");
+        paidCheckBox.setBounds(130, 160, 200, 30);
+        paidCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(paidCheckBox);
+
+        partialPaidCheckBox = new JCheckBox("Thanh toán một phần");
+        partialPaidCheckBox.setBounds(130, 190, 200, 30);
+        partialPaidCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(partialPaidCheckBox);
+
+        overdueCheckBox = new JCheckBox("Quá hạn");
+        overdueCheckBox.setBounds(330, 130, 200, 30);
+        overdueCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(overdueCheckBox);
+
+        canceledCheckBox = new JCheckBox("Đã hủy");
+        canceledCheckBox.setBounds(330, 160, 200, 30);
+        canceledCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(canceledCheckBox);
+
+        processingCheckBox = new JCheckBox("Đang xử lý");
+        processingCheckBox.setBounds(330, 190, 200, 30);
+        processingCheckBox.addActionListener(e -> updateHouseholdTable(fee));
+        contentPanel.add(processingCheckBox);
+
+        createHouseholdInfoSection(contentPanel, fee);
+    }
+
+    // Hàm cập nhật bảng hộ gia đình
+    private void updateHouseholdTable(Fee fee) {
+        // Lấy danh sách hộ gia đình từ database
+        String[] selectedStatuses = getSelectedStatuses(unpaidCheckBox, paidCheckBox, partialPaidCheckBox, overdueCheckBox, canceledCheckBox, processingCheckBox);
+        ArrayList<HouseholdInfo> householdInfos = DatabaseConnected.getHouseholdInfoByFeeIdAndStatus(fee.id, selectedStatuses);
+
+        // Cập nhật bảng với dữ liệu mới
+        DefaultTableModel tableModel = (DefaultTableModel) householdTable.getModel();
+        tableModel.setRowCount(0);
+        for (HouseholdInfo info : householdInfos) {
+            Object[] row = {info.headOfHouseholdName, info.address, info.feeStatus};
+            tableModel.addRow(row);
+        }
+    }
+
+    // Hàm hiển thị phần thông tin hộ gia đình
+    private void createHouseholdInfoSection(JPanel contentPanel, Fee fee) {
+        JLabel householdLabel = new JLabel("Danh sách Hộ Gia Đình:");
+        householdLabel.setBounds(20, 220, 200, 30);
+        contentPanel.add(householdLabel);
+
+        // Tạo bảng để hiển thị thông tin hộ gia đình
+        String[] columnNames = {"Tên Chủ Hộ", "Địa Chỉ", "Trạng Thái"};
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        householdTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(householdTable);
+        scrollPane.setBounds(20, 250, 400, 150);
+        contentPanel.add(scrollPane);
+
+        // Gọi phương thức cập nhật bảng khi tạo phần thông tin hộ gia đình lần đầu
+        updateHouseholdTable(fee);
+    }
+
+    private String[] getSelectedStatuses(JCheckBox... checkBoxes) {
+        ArrayList<String> selectedStatuses = new ArrayList<>();
+
+        for (JCheckBox checkBox : checkBoxes) {
+            if (checkBox.isSelected()) {
+                selectedStatuses.add(checkBox.getText());
+            }
+        }
+
+        return selectedStatuses.toArray(new String[0]);
+    }
+
+    // Hàm tạo footer
+    private void createFooterPanel(JPanel panel) {
+        JPanel footerPanel = new JPanel();
+        footerPanel.setLayout(null);
+        footerPanel.setBounds(0, getHeight() * 9 / 10, getWidth(), getHeight() / 10);
+        footerPanel.setBackground(Color.LIGHT_GRAY);
 
         JButton cancelButton = new JButton("Hủy");
-        cancelButton.setBounds(220, 200, 100, 30);
+        cancelButton.setBounds((footerPanel.getWidth() - 100) / 2, (footerPanel.getHeight() - 40) / 2, 100, 40);
         cancelButton.addActionListener(e -> dispose());
-        panel.add(cancelButton);
+        footerPanel.add(cancelButton);
+
+        panel.add(footerPanel);
     }
+
 
     private void addFeeContent(JPanel panel) {
         panel.setLayout(null);
@@ -131,6 +289,22 @@ public class FeesPopup extends JDialog {
         amountHintLabel.setForeground(Color.GRAY);
         contentPanel.add(amountHintLabel);
 
+        // Dropdown chọn loại phí: Chung/Riêng
+        JLabel typeLabel = new JLabel("Loại phí:");
+        typeLabel.setBounds(20, 260, 100, 40);
+        contentPanel.add(typeLabel);
+
+        String[] feeTypes = {"Chung", "Riêng"};
+        feeTypeComboBox = new JComboBox<>(feeTypes);
+        feeTypeComboBox.setBounds(130, 260, 200, 40);
+        contentPanel.add(feeTypeComboBox);
+
+        // Gợi ý
+        JLabel typeHintLabel = new JLabel("Chọn loại phí");
+        typeHintLabel.setBounds(25 + getWidth() / 4, 300, 300, 20);
+        typeHintLabel.setForeground(Color.GRAY);
+        contentPanel.add(typeHintLabel);
+
         panel.add(contentPanel);
 
         // Footer
@@ -158,6 +332,7 @@ public class FeesPopup extends JDialog {
         String feeName = feeNameField.getText().trim();
         String feeDescription = descriptionField.getText().trim();
         String amountStr = amountField.getText().trim();
+        String feeType = Objects.equals(feeTypeComboBox.getSelectedItem(), "Chung") ? "all" : "part";
 
         if (feeName.isEmpty() || feeDescription.isEmpty() || amountStr.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -172,7 +347,7 @@ public class FeesPopup extends JDialog {
             return;
         }
 
-        int generatedId = DatabaseConnected.addFee(feeName, feeDescription, amount);
+        int generatedId = DatabaseConnected.addFee(feeName, feeDescription, amount, feeType);
 
         if (generatedId != -1) {
             Object[] newFee = new Object[8];

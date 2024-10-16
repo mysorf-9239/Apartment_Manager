@@ -1,4 +1,4 @@
-package model.households;
+package view.households;
 
 import controller.DatabaseConnected;
 import model.HouseholdMember;

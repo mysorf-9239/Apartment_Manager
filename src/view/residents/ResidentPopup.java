@@ -1,4 +1,4 @@
-package model.residents;
+package view.residents;
 
 import controller.DatabaseConnected;
 

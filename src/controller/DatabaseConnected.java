@@ -4,6 +4,8 @@ import model.*;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class DatabaseConnected {
     private static final String URL = "jdbc:mysql://localhost:3306/apartment";
@@ -50,7 +52,6 @@ public class DatabaseConnected {
 
 
     /*  RESIDENT  */
-
     // Lấy dữ liệu cư dân và trả về dưới dạng ArrayList<Object[]>
     public static ArrayList<Object[]> getResidentsData() {
         String query = "SELECT id, full_name, date_of_birth, gender, id_card, is_temp_resident, household_id FROM residents";
@@ -433,8 +434,8 @@ public class DatabaseConnected {
         return feesData;
     }
 
-    public static int addFee(String feeName, String feeDescription, double amount) {
-        String query = "INSERT INTO fees (fee_name, fee_description, amount) VALUES (?, ?, ?)";
+    public static int addFee(String feeName, String feeDescription, double amount, String type) {
+        String query = "INSERT INTO fees (fee_name, fee_description, amount, type) VALUES (?, ?, ?, ?)";
         int generatedId = -1;
 
         try (Connection conn = getConnection();
@@ -442,6 +443,7 @@ public class DatabaseConnected {
             pstmt.setString(1, feeName);
             pstmt.setString(2, feeDescription);
             pstmt.setDouble(3, amount);
+            pstmt.setString(4, type);
             int affectedRows = pstmt.executeUpdate();
 
             if (affectedRows > 0) {
@@ -494,6 +496,101 @@ public class DatabaseConnected {
         }
     }
 
+    public static ArrayList<Object[]> getFeesDataByType(String type) {
+        ArrayList<Object[]> feesData = new ArrayList<>();
+        String query;
+
+        if (type.equals("AllF")) {
+            query = "SELECT id, fee_name, amount, fee_description, created_at, updated_at, status FROM fees";
+        } else {
+            query = "SELECT id, fee_name, amount, fee_description, created_at, updated_at, status FROM fees WHERE type = ?";
+        }
+
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            if (!type.equals("AllF")) {
+                stmt.setString(1, type);
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            int index = 0;
+            while (rs.next()) {
+                Object[] row = new Object[8];
+                row[0] = String.format("%02d", index + 1);
+                row[1] = rs.getInt("id");
+                row[2] = rs.getString("fee_name");
+                row[3] = rs.getDouble("amount");
+                row[4] = rs.getString("fee_description");
+                row[5] = rs.getTimestamp("created_at");
+                row[6] = rs.getTimestamp("updated_at");
+                row[7] = rs.getString("status");
+
+                feesData.add(row);
+                index++;
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return feesData;
+    }
+
+    public static ArrayList<HouseholdInfo> getHouseholdInfoByFeeIdAndStatus(int feeId, String[] statuses) {
+        ArrayList<HouseholdInfo> householdInfoList = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnected.getConnection();
+
+            // Tạo dấu hỏi cho IN clause
+            String placeholders = String.join(",", Collections.nCopies(statuses.length, "?"));
+            String sql = "SELECT r.full_name, h.address, fh.status " +
+                    "FROM households h " +
+                    "JOIN households_fees fh ON h.id = fh.household_id " +
+                    "JOIN fees f ON fh.fee_id = f.id " +
+                    "JOIN residents r ON h.head_of_household = r.id " +
+                    "WHERE f.id = ? AND fh.status IN (" + placeholders + ")";
+
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, feeId);
+            for (int i = 0; i < statuses.length; i++) {
+                pstmt.setString(i + 2, statuses[i]);
+            }
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String headOfHouseholdName = rs.getString("full_name");
+                String address = rs.getString("address");
+                String feeStatus = rs.getString("status");
+                householdInfoList.add(new HouseholdInfo(headOfHouseholdName, address, feeStatus));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            // Đóng tài nguyên
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return householdInfoList;
+    }
+
+
     /*  PAYMENT  */
     //Lấy data cho dropdown
     public static ArrayList<Object[]> getFeesDropdown() {
@@ -542,7 +639,7 @@ public class DatabaseConnected {
 
     // Phương thức lấy thông tin từ bảng fees theo fee_id
     private static Fee getFeeById(int feeId, Connection conn) throws SQLException {
-        String sql = "SELECT `id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status` FROM `fees` WHERE id = ?";
+        String sql = "SELECT `id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status`, `type` FROM `fees` WHERE id = ?";
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.setInt(1, feeId);
         ResultSet rs = pstmt.executeQuery();
@@ -551,12 +648,56 @@ public class DatabaseConnected {
         if (rs.next()) {
             fee = new Fee(rs.getInt("id"), rs.getString("fee_name"), rs.getString("fee_description"),
                     rs.getDouble("amount"), rs.getTimestamp("created_at"),
-                    rs.getTimestamp("updated_at"), rs.getString("status"));
+                    rs.getTimestamp("updated_at"), rs.getString("status"), rs.getString("type"));
         }
         rs.close();
         pstmt.close();
         return fee;
     }
+
+    public static Fee getFeeById(int feeId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Fee fee = null;
+
+        try {
+            conn = DatabaseConnected.getConnection();
+
+            String sql = "SELECT `id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status`, `type` FROM `fees` WHERE id = ?";
+
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, feeId);
+
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                fee = new Fee(rs.getInt("id"),
+                        rs.getString("fee_name"),
+                        rs.getString("fee_description"),
+                        rs.getDouble("amount"),
+                        rs.getTimestamp("created_at"),
+                        rs.getTimestamp("updated_at"),
+                        rs.getString("status"),
+                        rs.getString("type"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return fee;
+    }
+
 
     // Method to get all payments for a specific household_id and fee_id
     private static ArrayList<Payment> getPaymentsByHouseholdAndFee(int householdId, int feeId, Connection conn) throws SQLException {
@@ -582,7 +723,6 @@ public class DatabaseConnected {
         }
         return paymentRecords;
     }
-
 
     // Phương thức mới lấy thông tin từ bảng payments dựa trên household_id và fee_id
     private static Payment getPaymentByHouseholdAndFeeId(int householdId, int feeId, Connection conn) throws SQLException {
@@ -638,7 +778,7 @@ public class DatabaseConnected {
                 Object[] paymentRecord = new Object[10];
 
                 // 0: Index
-                paymentRecord[0] = index++;
+                paymentRecord[0] = String.format("%02d", index + 1);
 
                 // 1: id (households_fees)
                 int householdFeeId = rs.getInt("id");
@@ -690,5 +830,270 @@ public class DatabaseConnected {
         return paymentData;
     }
 
+    /*Add payment*/
+    public static ArrayList<Object[]> addPayment(int householdId, int feeId, double paymentAmount, String paymentMethod) throws SQLException {
+        ArrayList<Object[]> paymentData = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+
+        try {
+            conn = DatabaseConnected.getConnection();
+
+            // Insert new payment
+            String insertSql = "INSERT INTO payments (household_id, fee_id, payment_amount, payment_method) VALUES (?, ?, ?, ?)";
+            pstmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            pstmt.setDouble(3, paymentAmount);
+            pstmt.setString(4, paymentMethod);
+            pstmt.executeUpdate();
+
+            // Get the payment ID
+            ResultSet generatedKeys = pstmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int paymentId = generatedKeys.getInt(1);
+
+                // Update status in households_fees
+                String updateSql = "UPDATE households_fees SET status = ?, updated_at = NOW() WHERE household_id = ? AND fee_id = ?";
+                double totalPaid = DatabaseConnected.getTotalPaid(householdId, feeId, conn);
+                double amountDue = DatabaseConnected.getAmountDue(householdId, feeId, conn);
+                String status = totalPaid >= amountDue ? "Đã thanh toán" : "Thanh toán một phần";
+
+                updatePstmt = conn.prepareStatement(updateSql);
+                updatePstmt.setString(1, status);
+                updatePstmt.setInt(2, householdId);
+                updatePstmt.setInt(3, feeId);
+                updatePstmt.executeUpdate();
+
+                // Get updated households_fees record
+                String selectSql = "SELECT * FROM households_fees WHERE household_id = ? AND fee_id = ?";
+                selectPstmt = conn.prepareStatement(selectSql);
+                selectPstmt.setInt(1, householdId);
+                selectPstmt.setInt(2, feeId);
+                ResultSet rs = selectPstmt.executeQuery();
+
+                int index = 0;
+                while (rs.next()) {
+                    Object[] paymentRecord = new Object[10];
+                    paymentRecord[0] = String.format("%02d", index + 1);
+                    paymentRecord[1] = rs.getInt("id");
+                    paymentRecord[2] = getHouseholdById(householdId, conn);
+                    paymentRecord[3] = getFeeById(feeId, conn);
+                    paymentRecord[4] = rs.getDouble("amount_due");
+                    paymentRecord[5] = rs.getDate("due_date");
+                    paymentRecord[6] = rs.getString("status");
+                    paymentRecord[7] = rs.getTimestamp("created_at");
+                    paymentRecord[8] = rs.getTimestamp("updated_at");
+                    paymentRecord[9] = getPaymentsByHouseholdAndFee(householdId, feeId, conn);
+                    paymentData.add(paymentRecord);
+                    index++;
+                }
+            }
+
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (selectPstmt != null) selectPstmt.close();
+            if (updatePstmt != null) updatePstmt.close();
+            if (pstmt != null) pstmt.close();
+            if (conn != null) conn.close();
+        }
+        return paymentData;
+    }
+
+    //Lấy id chủ nhà bằng cccd và full_name
+    public static int getHouseholdIdByCCCD(String headOfHouseholdName, String cccd) throws SQLException {
+        String sql = "SELECT h.id FROM households h INNER JOIN residents r ON h.head_of_household = r.id WHERE r.full_name = ? AND r.id_card = ?";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, headOfHouseholdName);
+            pstmt.setString(2, cccd);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            } else {
+                throw new SQLException("Không tìm thấy hộ gia đình với chủ hộ đã cho.");
+            }
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int getFeeIdByName(String feeName) throws SQLException {
+        String sql = "SELECT id FROM fees WHERE fee_name = ?";
+        try (Connection conn = DatabaseConnected.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, feeName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            } else {
+                throw new SQLException("Không tìm thấy khoản phí với tên đã cho.");
+            }
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean checkHouseholdFeeExist(int householdId, int feeId) throws SQLException {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            String sql = "SELECT COUNT(*) FROM households_fees WHERE household_id = ? AND fee_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+            if (conn != null) conn.close();
+        }
+        return false;
+    }
+
+    public static double getTotalPaid(int householdId, int feeId, Connection conn) throws SQLException {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        double totalPaid = 0.0;
+
+        try {
+            String sql = "SELECT SUM(payment_amount) FROM payments WHERE household_id = ? AND fee_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                totalPaid = rs.getDouble(1);
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+        return totalPaid;
+    }
+
+    public static double getAmountDue(int householdId, int feeId, Connection conn) throws SQLException {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        double amountDue = 0.0;
+
+        try {
+            String sql = "SELECT amount_due FROM households_fees WHERE household_id = ? AND fee_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                amountDue = rs.getDouble("amount_due");
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+        return amountDue;
+    }
+
+    public static ArrayList<Object[]> getPaymentsByHouseholdId(int householdId) {
+        ArrayList<Object[]> payments = new ArrayList<>();
+        // Thực hiện truy vấn để lấy thông tin khoản thu của hộ gia đình
+        String query = "SELECT * FROM payments WHERE household_id = ?";
+        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+            statement.setInt(1, householdId);
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                Object[] payment = new Object[]{
+                        resultSet.getInt("id"),
+                        resultSet.getInt("household_id"),
+                        resultSet.getInt("fee_id"),
+                        resultSet.getBigDecimal("payment_amount"),
+                        resultSet.getTimestamp("payment_date"),
+                        resultSet.getString("payment_method"),
+                        resultSet.getString("note")
+                };
+                payments.add(payment);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+        return payments;
+    }
+
+    public static Object[] getPaymentDetails(int paymentId) {
+        Object[] paymentDetails = null;
+        String query = "SELECT * FROM payments WHERE id = ?";
+        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+            statement.setInt(1, paymentId);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                paymentDetails = new Object[]{
+                        resultSet.getInt("id"),
+                        resultSet.getInt("household_id"),
+                        resultSet.getInt("fee_id"),
+                        resultSet.getBigDecimal("payment_amount"),
+                        resultSet.getTimestamp("payment_date"),
+                        resultSet.getString("payment_method"),
+                        resultSet.getString("note")
+                };
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+        return paymentDetails;
+    }
+
+    public static boolean editPayment(int paymentId, double amount, String paymentMethod, String note) {
+        String query = "UPDATE payments SET payment_amount = ?, payment_method = ?, note = ? WHERE id = ?";
+        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+            statement.setDouble(1, amount);
+            statement.setString(2, paymentMethod);
+            statement.setString(3, note);
+            statement.setInt(4, paymentId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getFeeNameById(int feeId) {
+        String feeName = null;
+        String query = "SELECT name FROM fees WHERE id = ?"; // Giả sử bảng 'fees' có cột 'name'
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, feeId);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                feeName = resultSet.getString("name");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Xử lý ngoại lệ, có thể thay thế bằng logging
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return feeName;
+    }
 
 }
