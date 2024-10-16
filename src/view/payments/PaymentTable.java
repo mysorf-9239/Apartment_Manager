@@ -1,5 +1,6 @@
 package view.payments;
 
+import controller.DatabaseConnected;
 import model.Fee;
 import model.Payment;
 import view.table.TableHeader;
@@ -128,25 +129,30 @@ public class PaymentTable extends JPanel {
         int deleteIndex = rowIndex + (paymentWindow.currentPage - 1) * paymentWindow.rowsPerPage;
 
         Object[] deleteData = paymentWindow.data.get(deleteIndex);
+        Household hh = (Household)deleteData[2];
+        int household_id = hh.id;
+        Fee f = (Fee)deleteData[3];
+        int fee_id = f.id;
 
-        int paymentID = Integer.parseInt(deleteData[1].toString());
 
-        /*
-        boolean success = DatabaseConnected.deletePayment(paymentID);
 
-        if (success) {
-            paymentWindow.data.remove(deleteIndex);
-            System.out.println("Data deleted successfully.");
+        int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa mục này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = DatabaseConnected.deletePayment(household_id, fee_id);
 
-            paymentWindow.updateTable();
+            if (success) {
+                paymentWindow.data.remove(deleteIndex);
+                System.out.println("Xóa dữ liệu thành công.");
 
-            JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                paymentWindow.updateTable();
+
+                JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         }
-
-         */
     }
+
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;

@@ -502,12 +502,4 @@ public class PaymentPopup extends JDialog {
             JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật!");
         }
     }
-
-
-    private String formatCurrency(Double amount) {
-        NumberFormat numberFormat = NumberFormat.getInstance(Locale.getDefault());
-        numberFormat.setMinimumFractionDigits(0);
-        numberFormat.setMaximumFractionDigits(0);
-        return numberFormat.format(amount) + " đ";
-    }
 }

@@ -1112,5 +1112,43 @@ public class DatabaseConnected {
         }
     }
 
+    public static boolean deletePayment(int household_id, int fee_id) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            // Thiết lập kết nối đến cơ sở dữ liệu
+            conn = getConnection();
+
+            // Câu lệnh SQL để xóa các thanh toán có fee_id và household_id tương ứng
+            String sql = "DELETE FROM payments WHERE household_id = ? AND fee_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, household_id);
+            pstmt.setInt(2, fee_id);
+
+            // Thực thi câu lệnh xóa
+            int rowsAffected = pstmt.executeUpdate();
+
+            // Kiểm tra nếu có ít nhất một hàng bị xóa
+            success = (rowsAffected > 0);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false; // Đặt success về false nếu có lỗi xảy ra
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            // Đảm bảo đóng kết nối và PreparedStatement
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        return success;
+    }
 
 }

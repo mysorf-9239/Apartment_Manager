@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 01, 2024 at 03:44 PM
+-- Generation Time: Oct 16, 2024 at 07:26 PM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.11
 
@@ -55,18 +55,42 @@ CREATE TABLE `fees` (
   `amount` decimal(10,2) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `status` enum('active','inactive') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'active'
+  `status` enum('active','inactive') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'active',
+  `type` enum('all','part') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'all'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `fees`
 --
 
-INSERT INTO `fees` (`id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status`) VALUES
-(1, 'fee1', 'This is a fee', 100000.00, '2024-10-01 07:04:46', '2024-10-01 07:04:46', 'active'),
-(2, 'fee2', 'This is a fee', 10000.00, '2024-10-01 07:04:58', '2024-10-01 07:04:58', 'active'),
-(3, 'Phí dịch vụ 1', 'Test', 1000000.00, '2024-10-01 07:50:59', '2024-10-01 07:50:59', 'active'),
-(4, 'Phí dịch vụ 2', 'Test change', 10000.00, '2024-10-01 07:51:41', '2024-10-01 08:09:45', 'active');
+INSERT INTO `fees` (`id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status`, `type`) VALUES
+(1, 'fee1', 'This is a fee', 100000.00, '2024-10-01 07:04:46', '2024-10-16 14:28:29', 'active', 'part'),
+(2, 'fee2', 'This is a fee', 10000.00, '2024-10-01 07:04:58', '2024-10-16 14:28:32', 'active', 'part'),
+(3, 'Phí dịch vụ 1', 'Test', 1000000.00, '2024-10-01 07:50:59', '2024-10-16 14:28:34', 'active', 'part'),
+(4, 'Phí dịch vụ 2', 'Test change', 10000.00, '2024-10-01 07:51:41', '2024-10-16 14:28:38', 'active', 'part');
+
+--
+-- Triggers `fees`
+--
+DELIMITER $$
+CREATE TRIGGER `after_fee_insert` AFTER INSERT ON `fees` FOR EACH ROW BEGIN
+    -- Kiểm tra nếu type của fee mới là 'all'
+    IF NEW.type = 'all' THEN
+        -- Chèn khoản phí mới cho tất cả các hộ gia đình trong bảng households
+        INSERT INTO households_fees (household_id, fee_id, amount_due, due_date, status, created_at, updated_at)
+        SELECT 
+            households.id,               -- household_id
+            NEW.id,                      -- fee_id (phí vừa được thêm)
+            NEW.amount,                  -- amount_due (dựa trên amount của phí)
+            CURDATE() + INTERVAL 30 DAY, -- due_date (giả sử hạn thanh toán là 30 ngày sau khi phí được thêm)
+            'Chưa thanh toán',           -- status
+            NOW(),                       -- created_at
+            NOW()                        -- updated_at
+        FROM households;  -- Bảng chứa tất cả các household (gia đình) hiện có
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -111,8 +135,18 @@ CREATE TABLE `households_fees` (
 --
 
 INSERT INTO `households_fees` (`id`, `household_id`, `fee_id`, `amount_due`, `due_date`, `status`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 100000.00, '2024-10-10', 'Chưa thanh toán', '2024-10-01 14:00:56', '2024-10-01 14:00:56'),
-(3, 4, 1, 100000.00, '2024-10-10', 'Chưa thanh toán', '2024-10-01 14:01:33', '2024-10-01 14:01:33');
+(1, 1, 1, 100000.00, '2024-10-10', 'Đã thanh toán', '2024-10-01 14:00:56', '2024-10-02 16:09:46'),
+(3, 4, 1, 100000.00, '2024-10-10', 'Chưa thanh toán', '2024-10-01 14:01:33', '2024-10-01 14:01:33'),
+(4, 5, 1, 100000.00, '2024-11-01', 'Đã thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:20:06'),
+(7, 5, 2, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(8, 4, 2, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(9, 1, 2, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(10, 5, 3, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(11, 4, 3, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(12, 1, 3, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(13, 5, 4, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(14, 4, 4, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34'),
+(15, 1, 4, 100000.00, '2024-11-01', 'Chưa thanh toán', '2024-10-02 06:18:34', '2024-10-02 06:18:34');
 
 -- --------------------------------------------------------
 
@@ -136,8 +170,11 @@ CREATE TABLE `payments` (
 
 INSERT INTO `payments` (`id`, `household_id`, `fee_id`, `payment_amount`, `payment_date`, `payment_method`, `note`) VALUES
 (1, 1, 1, 10000.00, '2024-10-01 15:12:21', 'Tiền mặt', NULL),
-(2, 4, 1, 10000.00, '2024-10-01 15:12:36', 'Tiền mặt', NULL),
-(3, 1, 1, 10000.00, '2024-10-01 15:14:16', 'Chuyển khoản', NULL);
+(3, 1, 1, 10000.00, '2024-10-01 15:14:16', 'Chuyển khoản', NULL),
+(4, 1, 1, 10000.00, '2024-10-01 18:07:01', 'Tiền mặt', NULL),
+(6, 5, 1, 49999.00, '2024-10-01 18:14:52', 'Tiền mặt', NULL),
+(7, 5, 1, 30000.00, '2024-10-01 18:14:58', 'Tiền mặt', NULL),
+(8, 5, 1, 20000.00, '2024-10-02 06:20:06', 'Tiền mặt', NULL);
 
 -- --------------------------------------------------------
 
@@ -197,7 +234,8 @@ INSERT INTO `residents` (`id`, `full_name`, `date_of_birth`, `gender`, `id_card`
 (11, 'Lê Thị N', '2015-09-28', 'Nữ', '1234567890', 0, NULL),
 (12, 'Lê Văn P', '2014-09-08', 'Nam', '1234567890', 0, NULL),
 (13, 'Lê Thị Q', '2015-09-28', 'Nữ', '1234567890', 0, 5),
-(14, 'Nguyen Van T', '1989-01-01', 'Nam', '123456789012', 0, 5);
+(14, 'Nguyen Van T', '1989-01-01', 'Nam', '123456789012', 0, 5),
+(17, 'Tran Duc B', '2000-10-10', 'Nam', '29129192919219', 0, NULL);
 
 --
 -- Indexes for dumped tables
@@ -280,13 +318,13 @@ ALTER TABLE `households`
 -- AUTO_INCREMENT for table `households_fees`
 --
 ALTER TABLE `households_fees`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `relationships`
@@ -298,7 +336,7 @@ ALTER TABLE `relationships`
 -- AUTO_INCREMENT for table `residents`
 --
 ALTER TABLE `residents`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Constraints for dumped tables
