@@ -1,6 +1,7 @@
 package view;
 
 import controller.DatabaseConnected;
+import model.Account;
 
 import javax.swing.*;
 import java.awt.*;
@@ -61,14 +62,15 @@ public class LoginWindow extends JPanel {
         rightPanel.add(passText);
         rightPanel.add(loginButton);
 
-        // Xử lý sự kiện đăng nhập
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String username = userText.getText();
                 String password = new String(passText.getPassword());
 
-                if (isValidUser(username, password)) {
+                MainWindow.account = getUserAccount(username, password);
+
+                if (MainWindow.account != null) {
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(LoginWindow.this);
                     parentFrame.getContentPane().removeAll();
                     parentFrame.add(new MainWindow());
@@ -80,13 +82,12 @@ public class LoginWindow extends JPanel {
             }
         });
 
-        // Thêm cả hai panel vào layout chính
         add(leftPanel);
         add(rightPanel);
     }
 
-    // Phương thức kiểm tra thông tin đăng nhập
-    private boolean isValidUser(String username, String password) {
+    // Phương thức kiểm tra thông tin đăng nhập và tạo đối tượng Account
+    private Account getUserAccount(String username, String password) {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
@@ -95,7 +96,7 @@ public class LoginWindow extends JPanel {
             connection = DatabaseConnected.getConnection();
 
             if (connection != null) {
-                String query = "SELECT * FROM account WHERE username = ? AND password = ?";
+                String query = "SELECT id, username, password, image FROM account WHERE username = ? AND password = ?";
                 statement = connection.prepareStatement(query);
                 statement.setString(1, username.trim());
                 statement.setString(2, password.trim());
@@ -103,7 +104,16 @@ public class LoginWindow extends JPanel {
                 resultSet = statement.executeQuery();
 
                 if (resultSet.next()) {
-                    return true;
+                    int accountId = resultSet.getInt("id");
+                    String accountName = resultSet.getString("username");
+                    String accountPassword = resultSet.getString("password");
+                    String base64Image = resultSet.getString("image");
+
+                    if (base64Image == null || base64Image.isEmpty()) {
+                        return new Account(accountId, accountName, accountPassword);
+                    } else {
+                        return new Account(accountId, accountName, accountPassword, base64Image);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -120,6 +130,6 @@ public class LoginWindow extends JPanel {
                 e.printStackTrace();
             }
         }
-        return false;
+        return null;
     }
 }

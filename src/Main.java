@@ -13,7 +13,7 @@ public class Main {
         window.setTitle("Apartment");
         window.setSize(new Dimension(1080, 720));
 
-        MainWindow mainWindow = new MainWindow();
+        LoginWindow mainWindow = new LoginWindow();
         window.add(mainWindow);
 
         window.setLocationRelativeTo(null);

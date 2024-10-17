@@ -1,5 +1,6 @@
 package view;
 
+import model.Account;
 import util.ImageLoader;
 import view.fees.FeesWindow;
 import view.households.HouseholdsWindow;
@@ -13,6 +14,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 
 public class MainWindow extends JPanel {
+    public static Account account;
 
     private JPanel sidePanel, contentPanel;
     private CardLayout cardLayout;
@@ -65,6 +67,22 @@ public class MainWindow extends JPanel {
             sidePanel.add(button);
         }
 
+        JButton accountButton = new JButton("Quản lý tài khoản");
+        accountButton.setBounds(0, 640, 216, 60);
+        accountButton.setHorizontalAlignment(SwingConstants.LEFT);
+        accountButton.setMargin(new Insets(0, 20, 0, 0));
+
+        accountButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentFeature = "Quản lý tài khoản";
+                updateFeatureTitle();
+                cardLayout.show(contentPanel, "Account");
+            }
+        });
+
+        sidePanel.add(accountButton);
+
         add(sidePanel);
 
         // Nội dung chính (content panel)
@@ -84,6 +102,7 @@ public class MainWindow extends JPanel {
         contentPanel.add(new HouseholdsWindow(), "Households");
         contentPanel.add(new FeesWindow(), "Fees");
         contentPanel.add(new PaymentWindow(), "Payments");
+        contentPanel.add(new AccountManagementWindow(), "Account");
 
         // Initially set to a blank panel
         JPanel blankPanel = new JPanel();
