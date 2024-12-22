@@ -20,7 +20,7 @@ public class ResidentPopup extends JDialog {
     public ResidentPopup(JFrame parent, int popupName, ResidentsWindow residentsWindow, int editIndex) {
         super(parent, "Popup", true);
         setUndecorated(true);
-        setSize((int)(parent.getWidth() * 0.4), (int)(parent.getHeight() * 0.8));
+        setSize((int) (parent.getWidth() * 0.4), (int) (parent.getHeight() * 0.8));
         setLocationRelativeTo(parent);
 
         this.residentsWindow = residentsWindow;
@@ -169,12 +169,18 @@ public class ResidentPopup extends JDialog {
         }
 
         // Lưu vào cơ sở dữ liệu
-        DatabaseConnected.addResident(name, birthDate, gender, idCard);
+        int addId = DatabaseConnected.addResident(name, birthDate, gender, idCard);
 
         // Cập nhật danh sách cư dân
-        Object[] newResident = new Object[4];
+        Object[] newResident = new Object[8];
         newResident[0] = String.format("%02d", residentsWindow.data.size() + 1);
-        newResident[1] = name + "  -  " + birthDate;
+        newResident[1] = name;
+        newResident[2] = birthDate;
+        newResident[3] = gender;
+        newResident[4] = idCard;
+        newResident[5] = "0";
+        newResident[6] = "";
+        newResident[7] = addId;
         residentsWindow.data.add(newResident);
 
         // Cập nhật bảng và phân trang

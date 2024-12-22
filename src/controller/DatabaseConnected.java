@@ -95,25 +95,36 @@ public class DatabaseConnected {
     }
 
     // Thêm nhân khẩu
-    public static void addResident(String name, String birthDate, String gender, String idCard) {
+    public static int addResident(String name, String birthDate, String gender, String idCard) {
         String query = "INSERT INTO residents (full_name, date_of_birth, gender, id_card) VALUES (?, ?, ?, ?)";
         Connection connection = null;
+        int generatedId = -1;
+
         try {
             connection = getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, name);
             preparedStatement.setDate(2, java.sql.Date.valueOf(birthDate));
             preparedStatement.setString(3, gender);
             preparedStatement.setString(4, idCard);
 
             preparedStatement.executeUpdate();
+
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                generatedId = generatedKeys.getInt(1);
+            }
+
             preparedStatement.close();
         } catch (SQLException | DatabaseConnectionException e) {
             e.printStackTrace();
         } finally {
             closeConnection(connection);
         }
+
+        return generatedId;
     }
+
 
     // Phương thức mới để cập nhật cư dân
     public static boolean updateResident(int residentID, String name, String birthDate, String gender, String idCard) {
