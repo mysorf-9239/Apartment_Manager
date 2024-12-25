@@ -1,6 +1,5 @@
 package view.fees;
 
-import controller.DatabaseConnected;
 import view.table.TableHeader;
 import util.ImageLoader;
 
@@ -15,6 +14,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import static controller.FeeDAO.deleteFee;
 
 
 public class FeesTable extends JPanel {
@@ -64,8 +65,21 @@ public class FeesTable extends JPanel {
             });
 
             // Tạo nút "Chỉnh sửa"
+            JButton addButton = new JButton(new ImageIcon(editImage));
+            addButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
+            add(addButton);
+
+            // Thêm ActionListener cho nút chỉnh sửa
+            addButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    editRow(rowIndex);
+                }
+            });
+
+            // Tạo nút "Chỉnh sửa"
             JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
+            editButton.setBounds(columnX[7], (i + 1) * rowHeight + 10, 30, 30);
             add(editButton);
 
             // Thêm ActionListener cho nút chỉnh sửa
@@ -78,7 +92,7 @@ public class FeesTable extends JPanel {
 
             // Tạo nút "Xóa"
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnX[7], (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnX[8], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Thêm ActionListener cho nút xóa
@@ -102,13 +116,23 @@ public class FeesTable extends JPanel {
     private void viewRow(int rowIndex) {
         int viewIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage + 1;
 
-        System.out.println(viewIndex);
-
         FeesPopup popup = new FeesPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 FeesPopup.VIEW_FEE,
                 feesWindow,
                 viewIndex
+        );
+        popup.setVisible(true);
+    }
+
+    private void addRow(int rowIndex) {
+        int editIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
+
+        FeesPopup popup = new FeesPopup(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                FeesPopup.ADD_HOUSEHOLD,
+                feesWindow,
+                editIndex
         );
         popup.setVisible(true);
     }
@@ -132,7 +156,7 @@ public class FeesTable extends JPanel {
 
         int feeID = Integer.parseInt(deleteData[1].toString());
 
-        boolean success = DatabaseConnected.deleteFee(feeID);
+        boolean success = deleteFee(feeID);
 
         if (success) {
             feesWindow.data.remove(deleteIndex);
@@ -148,7 +172,7 @@ public class FeesTable extends JPanel {
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
-        int[] colWidth = {50, 170, 100, 200, 120, 70, 70, 70};
+        int[] colWidth = {50, 135, 100, 165, 120, 70, 70, 70, 70};
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Vẽ tiêu đề
@@ -227,8 +251,6 @@ public class FeesTable extends JPanel {
             return dateString;
         }
     }
-
-
 
     @Override
     protected void paintComponent(Graphics g) {

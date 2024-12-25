@@ -4,8 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import controller.DatabaseConnected;
+
+import controller.DatabaseConnection;
 import util.ImageLoader;
+
+import static controller.ResidentDAO.getResidentsData;
 
 public class ResidentsWindow extends JPanel {
     private static final int[] columnX = {15, 80, 400, 510, 590, 730, 800};
@@ -72,8 +75,8 @@ public class ResidentsWindow extends JPanel {
         add(addPanel);
 
         // Retrieve data from the database
-        DatabaseConnected db = new DatabaseConnected();
-        data = db.getResidentsData();
+        DatabaseConnection db = new DatabaseConnection();
+        data = getResidentsData();
 
         // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);

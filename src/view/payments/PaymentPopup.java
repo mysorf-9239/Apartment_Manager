@@ -1,6 +1,5 @@
 package view.payments;
 
-import controller.DatabaseConnected;
 import model.Household;
 import model.Payment;
 
@@ -8,11 +7,9 @@ import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 
-import static controller.DatabaseConnected.addPayment;
+import static controller.PaymentDAO.*;
 
 public class PaymentPopup extends JDialog {
     public PaymentWindow paymentWindow;
@@ -122,7 +119,7 @@ public class PaymentPopup extends JDialog {
 
         // Dropdown cho khoản phí
         feeDropdown = new JComboBox<>();
-        feesData = DatabaseConnected.getFeesDropdown();
+        feesData = getFeesDropdown();
         String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
         feeDropdown = new JComboBox<>(feeNames);
         feeDropdown.setBounds(130, 150, 200, 40);
@@ -242,7 +239,7 @@ public class PaymentPopup extends JDialog {
 
         // Dropdown cho khoản phí
         feeDropdown = new JComboBox<>();
-        feesData = DatabaseConnected.getFeesDropdown();
+        feesData = getFeesDropdown();
         String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
         feeDropdown = new JComboBox<>(feeNames);
         feeDropdown.setBounds(130, 150, 200, 40);
@@ -313,12 +310,12 @@ public class PaymentPopup extends JDialog {
 
         try {
             // Lấy household_id và kiểm tra nếu khoản phí có tồn tại
-            int householdId = DatabaseConnected.getHouseholdIdByCCCD(householdName, cccd);
-            int feeId = DatabaseConnected.getFeeIdByName(selectedFeeName);
+            int householdId = getHouseholdIdByCCCD(householdName, cccd);
+            int feeId = getFeeIdByName(selectedFeeName);
             int paymentAmount = Integer.parseInt(amountStr);
 
             // Kiểm tra xem household_id có fee_id trong households_fees không
-            if (!DatabaseConnected.checkHouseholdFeeExist(householdId, feeId)) {
+            if (!checkHouseholdFeeExist(householdId, feeId)) {
                 JOptionPane.showMessageDialog(this, "Hộ gia đình không có khoản phí này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -382,7 +379,7 @@ public class PaymentPopup extends JDialog {
 
         // Dropdown cho khoản phí
         feeDropdown = new JComboBox<>();
-        feesData = DatabaseConnected.getFeesDropdown();
+        feesData = getFeesDropdown();
         String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
         feeDropdown = new JComboBox<>(feeNames);
         feeDropdown.setBounds(130, 90, 200, 40);
@@ -488,7 +485,7 @@ public class PaymentPopup extends JDialog {
         String method = (String) editMethodDropdown.getSelectedItem();
 
         try {
-            boolean success = DatabaseConnected.updatePayment(paymentId, amount, method);
+            boolean success = updatePayment(paymentId, amount, method);
             paymentWindow.updatePaymentData();
 
             if (success) {

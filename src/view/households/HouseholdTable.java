@@ -1,6 +1,5 @@
 package view.households;
 
-import controller.DatabaseConnected;
 import view.table.TableHeader;
 import util.ImageLoader;
 import model.Resident;
@@ -12,12 +11,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import static controller.HouseholdDAO.deleteHousehold;
+
 public class HouseholdTable extends JPanel {
     HouseholdsWindow householdsWindow;
 
     private ArrayList<Object[]> data;
-    private String[] columnNames;
-    private int columnXHousehold[];
+    private final String[] columnNames;
+    private final int[] columnXHousehold;
     private BufferedImage viewImage;
     private BufferedImage editImage;
     private BufferedImage deleteImage;
@@ -120,14 +121,15 @@ public class HouseholdTable extends JPanel {
         int deleteIndex = rowIndex + (householdsWindow.currentPage - 1) * 10;
 
         Object[] deleteData = householdsWindow.data.get(deleteIndex);
+        Resident resident = (Resident) deleteData[3];
 
-        int householdID = Integer.parseInt(deleteData[0].toString());
+        int householdID = resident.id;
 
         // Xác nhận trước khi xóa
         int confirmation = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa hộ khẩu này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirmation == JOptionPane.YES_OPTION) {
             // Xóa khỏi cơ sở dữ liệu
-            boolean success = DatabaseConnected.deleteHousehold(householdID);
+            boolean success = deleteHousehold(householdID);
 
             if (success) {
                 // Xóa dữ liệu khỏi ArrayList

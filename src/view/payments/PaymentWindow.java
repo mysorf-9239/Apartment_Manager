@@ -4,9 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import controller.DatabaseConnected;
-import model.Payment;
+
+import controller.DatabaseConnection;
 import util.ImageLoader;
+
+import static controller.PaymentDAO.getFeesDropdown;
+import static controller.PaymentDAO.getPaymentData;
 
 public class PaymentWindow extends JPanel {
     private static final int[] columnX = {18, 80, 238, 330, 543, 660, 730, 800};
@@ -65,8 +68,8 @@ public class PaymentWindow extends JPanel {
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         // Lấy dữ liệu từ cơ sở dữ liệu
-        DatabaseConnected db = new DatabaseConnected();
-        feesData = db.getFeesDropdown();
+        DatabaseConnection db = new DatabaseConnection();
+        feesData = getFeesDropdown();
 
         // Tạo dropdown từ danh sách
         String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
@@ -96,7 +99,7 @@ public class PaymentWindow extends JPanel {
         add(addPanel);
 
         // Lấy dữ liệu thanh toán từ cơ sở dữ liệu
-        data = DatabaseConnected.getPaymentData(selectedFeeId);
+        data = getPaymentData(selectedFeeId);
 
         // Tính tổng số trang
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
@@ -118,7 +121,7 @@ public class PaymentWindow extends JPanel {
 
     // Hàm để cập nhật dữ liệu bảng khi chọn khoản phí mới
     public void updatePaymentData() {
-        data = DatabaseConnected.getPaymentData(selectedFeeId);
+        data = getPaymentData(selectedFeeId);
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         currentPage = 1;
         updateTable();

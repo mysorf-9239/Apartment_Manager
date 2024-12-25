@@ -5,7 +5,7 @@ import java.awt.*;
 public class TableHeader {
     static int[] columnX1 = {13, 180, 410, 497, 618, 735, 805};
     static int[] columnX2 = {13, 200, 520, 662, 735, 805};
-    static int[] columnX3 = {13, 80, 250, 400, 540, 662, 735, 805};
+    static int[] columnX3 = {13, 80, 215, 330, 470, 590, 657, 735, 805};
     static int[] columnX4 = {13, 110, 245, 400, 555, 662, 735, 805};
 
     public static void drawHeaderResident(Graphics g, String[] columnNames, int[] colWidth, int tableWidth) {

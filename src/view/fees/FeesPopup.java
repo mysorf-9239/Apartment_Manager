@@ -1,6 +1,5 @@
 package view.fees;
 
-import controller.DatabaseConnected;
 import model.Fee;
 import model.HouseholdInfo;
 
@@ -12,6 +11,9 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
+
+import static controller.FeeDAO.*;
+import static controller.PaymentDAO.getFeeById;
 
 public class FeesPopup extends JDialog {
     public FeesWindow feesWindow;
@@ -32,6 +34,7 @@ public class FeesPopup extends JDialog {
     public static final int VIEW_FEE = 1;
     public static final int ADD_FEE = 2;
     public static final int EDIT_FEE = 3;
+    public static final int ADD_HOUSEHOLD = 4;
 
     Fee fee;
 
@@ -57,6 +60,9 @@ public class FeesPopup extends JDialog {
             case EDIT_FEE:
                 editFeeContent(popupPanel, editIndex);
                 break;
+            case ADD_HOUSEHOLD:
+                addHouseholdContent(popupPanel, editIndex);
+                break;
             default:
                 throw new IllegalArgumentException("Invalid popup type");
         }
@@ -66,11 +72,11 @@ public class FeesPopup extends JDialog {
 
     private void viewFeeContent(JPanel panel, int viewIndex) {
         panel.setLayout(null);
-        fee = DatabaseConnected.getFeeById(viewIndex);
+        fee = getFeeById(viewIndex);
 
 
         // Header
-        createHeaderPanel(panel);
+        createHeaderPanel(panel, "Xem khoản phí");
 
         // Content
         JPanel contentPanel = new JPanel();
@@ -86,18 +92,42 @@ public class FeesPopup extends JDialog {
     }
 
     // Hàm tạo header
-    private void createHeaderPanel(JPanel panel) {
+    private void createHeaderPanel(JPanel panel, String title) {
         JPanel headerPanel = new JPanel();
         headerPanel.setLayout(null);
         headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
         headerPanel.setBackground(Color.LIGHT_GRAY);
 
-        JLabel titleLabel = new JLabel("Xem Khoản Phí", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
         headerPanel.add(titleLabel);
 
         panel.add(headerPanel);
+    }
+
+    private void addHouseholdContent(JPanel panel, int viewIndex) {
+        panel.setLayout(null);
+        fee = getFeeById(viewIndex);
+
+        // Header
+        createHeaderPanel(panel, "Thêm hộ gia đình");
+
+        if (fee.type.equals("all")) {
+            // Content
+            JPanel contentPanel = new JPanel();
+            contentPanel.setLayout(null);
+            contentPanel.setBounds(0, getHeight() / 10, getWidth(), getHeight() * 4 / 5);
+            panel.add(contentPanel);
+
+            // Là phí chung, không cần phải thêm riêng
+
+        } else {
+            // Thêm hộ gia đình vào danh sách khoản phí
+        }
+
+        // Footer
+        createFooterPanel(panel);
     }
 
     private void createFeeInfoSection(JPanel contentPanel) {
@@ -166,7 +196,7 @@ public class FeesPopup extends JDialog {
     private void updateHouseholdTable(Fee fee) {
         // Lấy danh sách hộ gia đình từ database
         String[] selectedStatuses = getSelectedStatuses(unpaidCheckBox, paidCheckBox, partialPaidCheckBox, overdueCheckBox, canceledCheckBox, processingCheckBox);
-        ArrayList<HouseholdInfo> householdInfos = DatabaseConnected.getHouseholdInfoByFeeIdAndStatus(fee.id, selectedStatuses);
+        ArrayList<HouseholdInfo> householdInfos = getHouseholdInfoByFeeIdAndStatus(fee.id, selectedStatuses);
 
         // Cập nhật bảng với dữ liệu mới
         DefaultTableModel tableModel = (DefaultTableModel) householdTable.getModel();
@@ -347,7 +377,7 @@ public class FeesPopup extends JDialog {
             return;
         }
 
-        int generatedId = DatabaseConnected.addFee(feeName, feeDescription, amount, feeType);
+        int generatedId = addFee(feeName, feeDescription, amount, feeType);
 
         if (generatedId != -1) {
             Object[] newFee = new Object[8];
@@ -497,7 +527,7 @@ public class FeesPopup extends JDialog {
             return;
         }
 
-        boolean success = DatabaseConnected.editFee(feeId, newFeeName, newDescription, newAmount);
+        boolean success = editFee(feeId, newFeeName, newDescription, newAmount);
 
         if (success) {
             Object[] updatedFee = feesWindow.data.get(editIndex);

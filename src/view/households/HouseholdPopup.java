@@ -1,6 +1,5 @@
 package view.households;
 
-import controller.DatabaseConnected;
 import model.HouseholdMember;
 import model.Resident;
 
@@ -8,8 +7,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.SQLException;
 import java.util.ArrayList;
+
+import static controller.HouseholdDAO.*;
 
 public class HouseholdPopup extends JDialog {
     public HouseholdsWindow householdsWindow;
@@ -129,7 +129,7 @@ public class HouseholdPopup extends JDialog {
         contentPanel.add(rightActionPanel);
 
         // Lấy danh sách thành viên cùng mối quan hệ
-        members = DatabaseConnected.getHouseholdMembersWithRelationships(householdID);
+        members = getHouseholdMembersWithRelationships(householdID);
         int yOffset = 10;
         for (HouseholdMember member : members) {
             // Member name
@@ -317,11 +317,11 @@ public class HouseholdPopup extends JDialog {
     private void addNewMemberToHousehold(JPanel leftPanel, JPanel rightPanel, int householdID, int headOfHouseholdID, String name, String idCard, String relationshipType) {
         try {
             // Step 1: Tìm resident_id từ residents table
-            Resident addResident = DatabaseConnected.getHeadOfHouseholdInfo(name, idCard);
+            Resident addResident = getHeadOfHouseholdInfo(name, idCard);
 
             // Step 2: Thêm thành viên vào hộ khẩu
             assert addResident != null;
-            boolean inserted = DatabaseConnected.addRelationship(addResident.id, headOfHouseholdID, relationshipType, householdID);
+            boolean inserted = addRelationship(addResident.id, headOfHouseholdID, relationshipType, householdID);
             if (inserted) {
                 JOptionPane.showMessageDialog(null, "Thêm hộ khẩu thành công!");
 
@@ -478,14 +478,14 @@ public class HouseholdPopup extends JDialog {
 
         try {
             // Bước 1: Tìm thông tin của chủ hộ
-            Resident headOfHousehold = DatabaseConnected.getHeadOfHouseholdInfo(fullName, idCard);
+            Resident headOfHousehold = getHeadOfHouseholdInfo(fullName, idCard);
             if (headOfHousehold == null) {
                 JOptionPane.showMessageDialog(null, "Không tìm thấy thông tin chủ hộ trong hệ thống.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             // Bước 2: Thêm hộ khẩu mới vào bảng households và lấy household_id
-            int householdId = DatabaseConnected.addHousehold(address, headOfHousehold.id);
+            int householdId = addHousehold(address, headOfHousehold.id);
             if (householdId == -1) {
                 JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi thêm hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -507,7 +507,7 @@ public class HouseholdPopup extends JDialog {
 
             // Đóng popup sau khi lưu thành công
             dispose();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi thêm hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -640,14 +640,14 @@ public class HouseholdPopup extends JDialog {
         }
 
         try {
-            Resident headOfHousehold = DatabaseConnected.getHeadOfHouseholdInfo(newHeadOfHouseholdName, newIdCard);
+            Resident headOfHousehold = getHeadOfHouseholdInfo(newHeadOfHouseholdName, newIdCard);
             if (headOfHousehold == null) {
                 JOptionPane.showMessageDialog(null, "Không tìm thấy thông tin chủ hộ trong hệ thống.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             // Cập nhật cơ sở dữ liệu
-            boolean isUpdated = DatabaseConnected.updateHousehold(householdID, newAddress, headOfHousehold.id);
+            boolean isUpdated = updateHousehold(householdID, newAddress, headOfHousehold.id);
             if (!isUpdated) {
                 JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật thông tin hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -666,7 +666,7 @@ public class HouseholdPopup extends JDialog {
 
             // Đóng popup sau khi lưu thành công
             dispose();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }

@@ -1,6 +1,6 @@
 package view;
 
-import controller.DatabaseConnected;
+import controller.DatabaseConnectionException;
 import model.Account;
 
 import javax.imageio.ImageIO;
@@ -130,7 +130,7 @@ public class AccountManagementWindow extends JPanel {
             JOptionPane.showMessageDialog(null, "Thông tin tài khoản đã được cập nhật thành công.");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật tài khoản: " + e.getMessage());
-        } catch (DatabaseConnected.DatabaseConnectionException e) {
+        } catch (DatabaseConnectionException e) {
             throw new RuntimeException(e);
         }
     }

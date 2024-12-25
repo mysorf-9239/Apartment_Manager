@@ -1,6 +1,5 @@
 package view.residents;
 
-import controller.DatabaseConnected;
 import view.table.TableHeader;
 import util.ImageLoader;
 
@@ -10,6 +9,8 @@ import java.awt.image.BufferedImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+
+import static controller.ResidentDAO.deleteResident;
 
 public class ResidentTable extends JPanel {
     ResidentsWindow residentsWindow;
@@ -98,7 +99,7 @@ public class ResidentTable extends JPanel {
         int residentID = Integer.parseInt(deleteData[7].toString());
 
         // Xóa khỏi cơ sở dữ liệu
-        boolean success = DatabaseConnected.deleteResident(residentID);
+        boolean success = deleteResident(residentID);
 
         if (success) {
             // Xóa dữ liệu khỏi ArrayList

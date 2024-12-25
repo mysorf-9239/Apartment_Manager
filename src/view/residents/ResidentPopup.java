@@ -1,9 +1,10 @@
 package view.residents;
 
-import controller.DatabaseConnected;
-
 import javax.swing.*;
 import java.awt.*;
+
+import static controller.ResidentDAO.addResident;
+import static controller.ResidentDAO.updateResident;
 
 public class ResidentPopup extends JDialog {
     public ResidentsWindow residentsWindow;
@@ -169,7 +170,7 @@ public class ResidentPopup extends JDialog {
         }
 
         // Lưu vào cơ sở dữ liệu
-        int addId = DatabaseConnected.addResident(name, birthDate, gender, idCard);
+        int addId = addResident(name, birthDate, gender, idCard);
 
         // Cập nhật danh sách cư dân
         Object[] newResident = new Object[8];
@@ -333,7 +334,7 @@ public class ResidentPopup extends JDialog {
         }
 
         // Sửa cơ sở dữ liệu
-        boolean success = DatabaseConnected.updateResident(residentID, name, birthDate, gender, idCard);
+        boolean success = updateResident(residentID, name, birthDate, gender, idCard);
 
         if (success) {
             // Cập nhật dữ liệu trong ArrayList

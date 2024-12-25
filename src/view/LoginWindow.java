@@ -1,6 +1,7 @@
 package view;
 
-import controller.DatabaseConnected;
+import controller.DatabaseConnection;
+import controller.DatabaseConnectionException;
 import model.Account;
 
 import javax.swing.*;
@@ -93,7 +94,7 @@ public class LoginWindow extends JPanel {
         ResultSet resultSet = null;
 
         try {
-            connection = DatabaseConnected.getConnection();
+            connection = DatabaseConnection.getConnection();
 
             if (connection != null) {
                 String query = "SELECT id, username, password, image FROM account WHERE username = ? AND password = ?";
@@ -119,13 +120,13 @@ public class LoginWindow extends JPanel {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
-        } catch (DatabaseConnected.DatabaseConnectionException e) {
+        } catch (DatabaseConnectionException e) {
             throw new RuntimeException(e);
         } finally {
             try {
                 if (resultSet != null) resultSet.close();
                 if (statement != null) statement.close();
-                if (connection != null) DatabaseConnected.closeConnection(connection);
+                if (connection != null) DatabaseConnection.closeConnection(connection);
             } catch (SQLException e) {
                 e.printStackTrace();
             }

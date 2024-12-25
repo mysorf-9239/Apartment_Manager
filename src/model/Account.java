@@ -1,6 +1,7 @@
 package model;
 
-import controller.DatabaseConnected;
+import controller.DatabaseConnection;
+import controller.DatabaseConnectionException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,12 +44,12 @@ public class Account {
     }
 
     // Phương thức cập nhật dữ liệu tài khoản trong DB
-    public void updateAccountInDB() throws SQLException, DatabaseConnected.DatabaseConnectionException {
+    public void updateAccountInDB() throws SQLException, DatabaseConnectionException {
         Connection connection = null;
         PreparedStatement statement = null;
 
         try {
-            connection = DatabaseConnected.getConnection();
+            connection = DatabaseConnection.getConnection();
 
             if (connection != null) {
                 String query = "UPDATE account SET username = ?, password = ?, image = ? WHERE id = ?";
@@ -64,7 +65,7 @@ public class Account {
             throw new SQLException("Không thể cập nhật tài khoản vào DB", e);
         } finally {
             if (statement != null) statement.close();
-            if (connection != null) DatabaseConnected.closeConnection(connection);
+            if (connection != null) DatabaseConnection.closeConnection(connection);
         }
     }
 

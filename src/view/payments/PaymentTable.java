@@ -1,8 +1,8 @@
 package view.payments;
 
-import controller.DatabaseConnected;
 import model.Fee;
 import model.Payment;
+import model.Resident;
 import view.table.TableHeader;
 import util.ImageLoader;
 import model.Household;
@@ -17,6 +17,8 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import static controller.PaymentDAO.deletePayment;
 
 
 public class PaymentTable extends JPanel {
@@ -138,7 +140,7 @@ public class PaymentTable extends JPanel {
 
         int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa mục này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            boolean success = DatabaseConnected.deletePayment(household_id, fee_id);
+            boolean success = deletePayment(household_id, fee_id);
 
             if (success) {
                 paymentWindow.data.remove(deleteIndex);
@@ -194,7 +196,8 @@ public class PaymentTable extends JPanel {
 
             // Vẽ tên chủ hộ
             Household household = (Household) rowData[2];
-            g.drawString(household.head_of_household.full_name, columnX[1], (i + 1) * rowHeight + 30);
+            Resident resident = household.head_of_household;
+            g.drawString(resident.full_name, columnX[1], (i + 1) * rowHeight + 30);
 
             // Vẽ số tiền phải nộp
             Fee fee = (Fee) rowData[3];

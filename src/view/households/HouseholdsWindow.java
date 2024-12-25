@@ -4,8 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import controller.DatabaseConnected;
+
+import controller.DatabaseConnection;
 import util.ImageLoader;
+
+import static controller.ResidentDAO.getHouseholdsData;
 
 public class HouseholdsWindow extends JPanel {
     private static final int[] columnXHousehold = {15, 70, 475, 660, 730, 800};
@@ -72,8 +75,8 @@ public class HouseholdsWindow extends JPanel {
         add(addPanel);
 
         // Retrieve data from the database
-        DatabaseConnected db = new DatabaseConnected();
-        data = db.getHouseholdsData();
+        DatabaseConnection db = new DatabaseConnection();
+        data = getHouseholdsData();
 
         // Calculate total pages
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
