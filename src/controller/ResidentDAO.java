@@ -6,6 +6,25 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class ResidentDAO {
+    /* Đếm */
+    public static int countResidents() {
+        String query = "SELECT COUNT(*) FROM residents";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     /* Lấy dữ liệu cư dân */
     public static ArrayList<Object[]> getResidentsData() {
         String query = "SELECT id, full_name, date_of_birth, gender, id_card, is_temp_resident, household_id FROM residents";
@@ -157,4 +176,32 @@ public class ResidentDAO {
         }
         return householdsData;
     }
+
+    public static int getIdByNameAndCCCD(String fullName, String cccd) {
+        String query = "SELECT household_id FROM residents WHERE full_name = ? AND id_card = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            // Set giá trị tham số cho PreparedStatement
+            stmt.setString(1, fullName);
+            stmt.setString(2, cccd);
+
+            // Thực thi truy vấn
+            ResultSet rs = stmt.executeQuery();
+
+            // Kiểm tra kết quả
+            if (rs.next()) {
+                return rs.getInt("household_id");
+            } else {
+                return -1;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

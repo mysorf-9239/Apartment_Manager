@@ -8,6 +8,25 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class HouseholdDAO {
+    /* Đếm */
+    public static int countHouseholds() {
+        String query = "SELECT COUNT(*) FROM households";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     /* Lấy dữ liệu hộ khẩu với id */
     public static Household getHouseholdById(int householdId) {
         String query = "SELECT h.id AS household_id, h.address, h.acreage, r.id AS resident_id, r.full_name, r.date_of_birth, " +

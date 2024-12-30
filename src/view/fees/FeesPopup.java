@@ -8,9 +8,10 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Objects;
 
 import static controller.FeeDAO.*;
 import static controller.PaymentDAO.getFeeById;
@@ -28,6 +29,10 @@ public class FeesPopup extends JDialog {
     JCheckBox overdueCheckBox;
     JCheckBox canceledCheckBox;
     JCheckBox processingCheckBox;
+
+    JTextField nameField;
+    JTextField CCCDField;
+    JTextField dueDateField;
 
     private JTable householdTable;
 
@@ -112,21 +117,132 @@ public class FeesPopup extends JDialog {
         // Header
         createHeaderPanel(panel, "Thêm hộ gia đình");
 
-//        if (fee.type.equals("all")) {
-//            // Content
-//            JPanel contentPanel = new JPanel();
-//            contentPanel.setLayout(null);
-//            contentPanel.setBounds(0, getHeight() / 10, getWidth(), getHeight() * 4 / 5);
-//            panel.add(contentPanel);
-//
-//            // Là phí chung, không cần phải thêm riêng
-//
-//        } else {
-//            // Thêm hộ gia đình vào danh sách khoản phí
-//        }
+        // Content
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBounds(0, 50, getWidth(), getHeight() * 4 / 5);
+        contentPanel.setBackground(Color.WHITE);
+
+        // Họ và tên
+        JLabel nameLabel = new JLabel("Họ và tên:");
+        nameLabel.setBounds(20, 50, getWidth() / 4, 40);
+        contentPanel.add(nameLabel);
+
+        nameField = new JTextField();
+        nameField.setBounds(10 + getWidth() / 4 + 5, 50, 300, 40);
+        contentPanel.add(nameField);
+
+        // Gợi ý cho Họ và tên
+        JLabel nameHintLabel = new JLabel("Họ và tên đầy đủ");
+        nameHintLabel.setBounds(20 + getWidth() / 4, 90, 300, 20);
+        nameHintLabel.setForeground(Color.GRAY);
+        contentPanel.add(nameHintLabel);
+
+        // CCCD
+        JLabel cccdLabel = new JLabel("CCCD:");
+        cccdLabel.setBounds(20, 110, getWidth() / 4, 40);
+        contentPanel.add(cccdLabel);
+
+        CCCDField = new JTextField();
+        CCCDField.setBounds(10 + getWidth() / 4 + 5, 110, 300, 40);
+        contentPanel.add(CCCDField);
+
+        // Gợi ý cho CCCD
+        JLabel cccdHintLabel = new JLabel("Đúng định dạng (Số CCCD)");
+        cccdHintLabel.setBounds(20 + getWidth() / 4, 150, 300, 20);
+        cccdHintLabel.setForeground(Color.GRAY);
+        contentPanel.add(cccdHintLabel);
+
+        // Due Date
+        JLabel dateLabel = new JLabel("Hạn:");
+        dateLabel.setBounds(20, 230, getWidth() / 4, 40);
+        contentPanel.add(dateLabel);
+
+        dueDateField = new JTextField();
+        dueDateField.setBounds(10 + getWidth() / 4 + 5, 230, 300, 40);
+        contentPanel.add(dueDateField);
+
+        // Gợi ý cho CCCD
+        JLabel idCardHintLabel = new JLabel("Đúng định dạng YYYY-MM-DD");
+        idCardHintLabel.setBounds(20 + getWidth() / 4, 270, 300, 20);
+        idCardHintLabel.setForeground(Color.GRAY);
+        contentPanel.add(idCardHintLabel);
+
+        panel.add(contentPanel);
 
         // Footer
-        createFooterPanel(panel);
+        JPanel footerPanel = new JPanel();
+        footerPanel.setLayout(new GridLayout(1, 2));
+        footerPanel.setBounds(0, 60 + contentPanel.getHeight(), getWidth(), getHeight() / 10);
+        footerPanel.setBackground(Color.LIGHT_GRAY);
+
+        // Nút Lưu
+        JButton continueButton = new JButton("Lưu");
+        continueButton.setPreferredSize(new Dimension(60, 40));
+        continueButton.addActionListener(e -> {
+            if (validateInputs()) {
+                saveAddHousehold(fee.id);
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Vui lòng kiểm tra lại thông tin.");
+            }
+        });
+        footerPanel.add(continueButton);
+
+        // Nút Hủy
+        JButton cancelButton = new JButton("Hủy");
+        cancelButton.setPreferredSize(new Dimension(60, 40));
+        cancelButton.addActionListener(e -> dispose());
+        footerPanel.add(cancelButton);
+
+        panel.add(footerPanel);
+    }
+
+    private boolean validateInputs() {
+        String name = nameField.getText().trim();
+        String cccd = CCCDField.getText().trim();
+
+        // Kiểm tra Họ và tên không rỗng
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập họ và tên.");
+            return false;
+        }
+
+        // Kiểm tra CCCD hợp lệ (ví dụ: phải có 12 chữ số)
+        if (cccd.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void saveAddHousehold(int feeId) {
+        // Lấy giá trị từ các trường nhập liệu
+        String name = nameField.getText().trim();
+        String cccd = CCCDField.getText().trim();
+        String dueDateStr = dueDateField.getText().trim();  // Lấy chuỗi ngày từ trường nhập liệu
+
+        // Chuyển đổi chuỗi ngày thành đối tượng Date
+        java.util.Date utilDate = null;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); // Định dạng ngày tháng
+
+        try {
+            utilDate = dateFormat.parse(dueDateStr);  // Chuyển chuỗi thành đối tượng Date
+        } catch (ParseException e) {
+            JOptionPane.showMessageDialog(this, "Ngày tháng không hợp lệ. Vui lòng nhập lại.");
+            return;
+        }
+
+        java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+
+        // Kiểm tra dữ liệu đầu vào, nếu hợp lệ thì tiếp tục
+        if (!validateInputs()) {
+            return;
+        }
+
+        // Gọi phương thức thêm hộ gia đình vào cơ sở dữ liệu
+        addHousehold(feeId, name, cccd, sqlDate);
     }
 
     private void createFeeInfoSection(JPanel contentPanel) {
@@ -144,7 +260,7 @@ public class FeesPopup extends JDialog {
         contentPanel.add(feeTypeLabel);
 
         // ComboBox cho loại phí (Chung, Riêng)
-        JLabel feeType = new JLabel(fee.type.equals("all") ? "Chung" : "Riêng");
+        JLabel feeType = new JLabel(fee.type.equals("Chung") ? "Chung" : "Riêng");
         feeType.setBounds(135, 90, 200, 30);
 
         contentPanel.add(feeType);
@@ -311,7 +427,7 @@ public class FeesPopup extends JDialog {
         contentPanel.add(amountField);
 
         // Gợi ý
-        JLabel amountHintLabel = new JLabel("Số tiền phải nộp");
+        JLabel amountHintLabel = new JLabel("Số tiền phải nộp (Với phí bắt buộc thì là đơn giá).");
         amountHintLabel.setBounds(25 + getWidth() / 4, 220, 300, 20);
         amountHintLabel.setForeground(Color.GRAY);
         contentPanel.add(amountHintLabel);
@@ -321,7 +437,7 @@ public class FeesPopup extends JDialog {
         typeLabel.setBounds(20, 260, 100, 40);
         contentPanel.add(typeLabel);
 
-        String[] feeTypes = {"Chung", "Riêng"};
+        String[] feeTypes = {"Chung", "Riêng", "Bắt buộc"};
         feeTypeComboBox = new JComboBox<>(feeTypes);
         feeTypeComboBox.setBounds(130, 260, 200, 40);
         contentPanel.add(feeTypeComboBox);
@@ -359,7 +475,7 @@ public class FeesPopup extends JDialog {
         String feeName = feeNameField.getText().trim();
         String feeDescription = descriptionField.getText().trim();
         String amountStr = amountField.getText().trim();
-        String feeType = Objects.equals(feeTypeComboBox.getSelectedItem(), "Chung") ? "all" : "part";
+        String feeType = feeTypeComboBox.getSelectedItem().toString();
 
         if (feeName.isEmpty() || feeDescription.isEmpty() || amountStr.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -388,7 +504,7 @@ public class FeesPopup extends JDialog {
             newFee[5] = createdAt;
             newFee[6] = createdAt;
 
-            newFee[7] = "active";
+            newFee[7] = "Đang thu phí";
 
             feesWindow.data.add(newFee);
             feesWindow.updateTable();

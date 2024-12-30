@@ -1,5 +1,6 @@
 package view.fees;
 
+import controller.FeeDAO;
 import view.table.TableHeader;
 import util.ImageLoader;
 
@@ -24,6 +25,7 @@ public class FeesTable extends JPanel {
     private String[] columnNames;
     private int columnX[];
     private BufferedImage viewImage;
+    private BufferedImage addImage;
     private BufferedImage editImage;
     private BufferedImage deleteImage;
 
@@ -43,6 +45,7 @@ public class FeesTable extends JPanel {
         viewImage = ImageLoader.loadImage("/img/view.png", 30, 30);
         editImage = ImageLoader.loadImage("/img/edit.png", 30, 30);
         deleteImage = ImageLoader.loadImage("/img/delete.png", 30, 30);
+        addImage =ImageLoader.loadImage("/img/add.png", 25, 25);
     }
 
     private void createButtons() {
@@ -64,7 +67,7 @@ public class FeesTable extends JPanel {
             });
 
             // Tạo nút "Thêm hộ"
-            JButton addButton = new JButton(new ImageIcon(editImage));
+            JButton addButton = new JButton(new ImageIcon(addImage));
             addButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
             add(addButton);
 
@@ -72,7 +75,13 @@ public class FeesTable extends JPanel {
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    addRow((Integer) data.get(rowIndex)[1]);
+                    int index = (Integer) data.get(rowIndex)[1];
+                    boolean isPart = FeeDAO.isPart(index);
+                    if (isPart){
+                        addRow(index);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Chỉ phí loại riêng mới phải thêm thủ công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
             });
 

@@ -85,7 +85,7 @@ public class FeesWindow extends JPanel {
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         // Dropdown chọn loại khoản phí
-        String[] feeTypes = {"All", "Chung", "Riêng"};
+        String[] feeTypes = {"All", "Chung", "Riêng", "Bắt buộc"};
         JComboBox<String> feeDropdown = new JComboBox<>(feeTypes);
         feeDropdown.setPreferredSize(new Dimension(150, 30));
 
@@ -99,9 +99,11 @@ public class FeesWindow extends JPanel {
             if (selectedType.equals("All")) {
                 Type = "AllF";
             } else if (selectedType.equals("Chung")) {
-                Type = "all";
+                Type = "Chung";
             } else if (selectedType.equals("Riêng")) {
-                Type = "part";
+                Type = "Riêng";
+            } else if (selectedType.equals("Bắt buộc")) {
+                Type = "Bắt buộc";
             }
 
             data = getFeesDataByType(Type);

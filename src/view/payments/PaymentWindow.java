@@ -94,13 +94,20 @@ public class PaymentWindow extends JPanel {
         // Lấy dữ liệu từ cơ sở dữ liệu
         feesData = getFeesDropdown();
 
-        // Tạo dropdown từ danh sách
-        String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
-        feeDropdown = new JComboBox<>(feeNames);
-        feeDropdown.setPreferredSize(new Dimension(150, 30));
+        if (!feesData.isEmpty()) {
+            String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
+            feeDropdown = new JComboBox<>(feeNames);
+            feeDropdown.setPreferredSize(new Dimension(150, 30));
 
-        // Gán selectedFeeId bằng khoản phí đầu tiên
-        selectedFeeId = (int) feesData.get(0)[0];
+            // Gán selectedFeeId bằng khoản phí đầu tiên
+            selectedFeeId = (int) feesData.get(0)[0];
+        } else {
+            // Xử lý khi danh sách rỗng
+            feeDropdown = new JComboBox<>(new String[]{"Không có dữ liệu"});
+            feeDropdown.setPreferredSize(new Dimension(150, 30));
+            selectedFeeId = -1;
+        }
+
 
         // Cập nhật dữ liệu mỗi khi chọn lại khoản phí
         feeDropdown.addActionListener(e -> {

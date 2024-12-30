@@ -162,8 +162,7 @@ public class PaymentTable extends JPanel {
             g.drawString(resident.full_name, columnX[1], (i + 1) * rowHeight + 30);
 
             // Vẽ số tiền phải nộp
-            Fee fee = (Fee) rowData[3];
-            g.drawString(String.valueOf(fee.amount), columnX[2], (i + 1) * rowHeight + 30);
+            g.drawString(String.valueOf(rowData[4]), columnX[2], (i + 1) * rowHeight + 30);
 
             // Vẽ tổng số tiền đã nộp
             ArrayList<Payment> payments = (ArrayList<Payment>) rowData[9];

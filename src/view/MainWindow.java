@@ -105,8 +105,7 @@ public class MainWindow extends JPanel {
         contentPanel.add(new AccountManagementWindow(), "Account");
 
         // Initially set to a blank panel
-        JPanel blankPanel = new JPanel();
-        contentPanel.add(blankPanel, "Blank");
+        contentPanel.add(new BlankWindow(), "Blank");
 
         add(contentPanel);
 

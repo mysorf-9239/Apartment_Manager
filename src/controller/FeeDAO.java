@@ -1,7 +1,9 @@
 package controller;
 
+import model.Fee;
 import model.HouseholdInfo;
 
+import javax.swing.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +11,25 @@ import java.util.Collections;
 import static controller.DatabaseConnection.getConnection;
 
 public class FeeDAO {
+    /* Đếm */
+    public static int countFees() {
+        String query = "SELECT COUNT(*) FROM fees";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     public static ArrayList<Object[]> getFeesData() {
         ArrayList<Object[]> feesData = new ArrayList<>();
         String query = "SELECT id, fee_name, amount, fee_description, created_at, updated_at, status FROM fees";
@@ -34,7 +55,6 @@ public class FeeDAO {
             }
 
             rs.close();
-            stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (DatabaseConnectionException e) {
@@ -198,5 +218,74 @@ public class FeeDAO {
         }
 
         return householdInfoList;
+    }
+
+    public static boolean isPart(int feeId) {
+        String query = "SELECT type FROM fees WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, feeId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String type = rs.getString("type");
+                    return "Riêng".equalsIgnoreCase(type);
+                }
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public static boolean addHousehold(int feeId, String name, String cccd, Date dueDate) {
+        // Lấy thông tin phí từ bảng phí
+        Fee fee = PaymentDAO.getFeeById(feeId);
+        if (fee == null) {
+            JOptionPane.showMessageDialog(null, "Không tìm thấy phí với ID này.");
+            return false;
+        }
+
+        int household_id = ResidentDAO.getIdByNameAndCCCD(name, cccd);
+        System.out.println(household_id);
+        if (household_id <= 0) {
+            JOptionPane.showMessageDialog(null, "Không tìm thấy hộ gia đình này.");
+            return false;
+        }
+
+        // Chuẩn bị câu lệnh SQL để chèn dữ liệu vào bảng households_fees
+        String query = "INSERT INTO households_fees (household_id, fee_id, amount_due, due_date) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            // Lấy giá trị amount từ đối tượng Fee
+            double amountDue = fee.amount;
+
+            // Thiết lập các tham số trong câu lệnh SQL
+            stmt.setInt(1, household_id);
+            stmt.setInt(2, feeId);  // fee_id
+            stmt.setDouble(3, amountDue);  // amount_due
+            stmt.setDate(4, new java.sql.Date(dueDate.getTime()));  // due_date (chuyển Date thành java.sql.Date)
+
+            // Thực thi câu lệnh SQL
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(null, "Hộ gia đình đã được thêm thành công.");
+                return true;
+            } else {
+                JOptionPane.showMessageDialog(null, "Có lỗi khi thêm hộ gia đình.");
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi kết nối cơ sở dữ liệu.");
+            return false;
+        } catch (DatabaseConnectionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
