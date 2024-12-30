@@ -54,6 +54,28 @@ public class ResidentsWindow extends JPanel {
 
         searchField = new JTextField();
         searchField.setBounds(40, 0, 744, 30);
+        searchField.addActionListener(e -> performSearch());
+        searchField.setText("Nhập từ khoá (tên hoặc CCCD) và Enter để tìm kiếm");
+        searchField.setForeground(Color.GRAY);
+
+        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (searchField.getText().equals("Nhập từ khoá (tên hoặc CCCD) và Enter để tìm kiếm")) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setText("Nhập từ khoá (tên hoặc CCCD) và Enter để tìm kiếm");
+                    searchField.setForeground(Color.GRAY);
+                }
+            }
+        });
+
         searchBox.add(searchField);
 
         add(searchBox);
@@ -151,5 +173,36 @@ public class ResidentsWindow extends JPanel {
 
     public static int[] getColumnX() {
         return columnX;
+    }
+
+    // Phương thức tìm kiếm
+    private void performSearch() {
+        String keyword = searchField.getText().trim().toLowerCase();
+
+        if (keyword.isEmpty()) {
+            // Hiển thị toàn bộ dữ liệu nếu không có từ khóa
+            currentPage = 1;
+            totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+            currentPageData = getPageData(currentPage);
+        } else {
+            // Lọc dữ liệu dựa trên từ khóa
+            ArrayList<Object[]> filteredData = new ArrayList<>();
+            for (Object[] resident : data) {
+                // Tìm kiếm trong tên, CCCD hoặc bất kỳ cột nào bạn muốn
+                if (resident[1].toString().toLowerCase().contains(keyword) ||
+                        resident[4].toString().toLowerCase().contains(keyword)) {
+                    filteredData.add(resident);
+                }
+            }
+
+            // Cập nhật dữ liệu hiện tại và phân trang
+            currentPage = 1;
+            totalPages = (int) Math.ceil((double) filteredData.size() / rowsPerPage);
+            currentPageData = filteredData.size() > 0 ? new ArrayList<>(filteredData.subList(0, Math.min(rowsPerPage, filteredData.size()))) : new ArrayList<>();
+        }
+
+        // Cập nhật bảng và phân trang
+        residentTable.updateTableData(currentPageData);
+        updatePagination();
     }
 }

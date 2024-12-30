@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import controller.DatabaseConnection;
 import util.ImageLoader;
@@ -53,8 +54,28 @@ public class FeesWindow extends JPanel {
         searchLabel.setBounds(0, 0, 30, 30);
         searchBox.add(searchLabel);
 
-        searchField = new JTextField();
+        searchField = new JTextField("Nhập từ khoá (tên khoản phí hoặc miêu tả) và Enter để tìm kiếm");
+        searchField.setForeground(Color.GRAY);
         searchField.setBounds(40, 0, 744, 30);
+
+        // Placeholder logic
+        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (searchField.getText().equals("Nhập từ khoá (tên khoản phí hoặc miêu tả) và Enter để tìm kiếm")) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setText("Nhập từ khoá (tên khoản phí hoặc miêu tả) và Enter để tìm kiếm");
+                    searchField.setForeground(Color.GRAY);
+                }
+            }
+        });
+
+        searchField.addActionListener(e -> filterTable());
         searchBox.add(searchField);
 
         add(searchBox);
@@ -178,5 +199,21 @@ public class FeesWindow extends JPanel {
 
     public static int[] getColumnX() {
         return columnX;
+    }
+
+    private void filterTable() {
+        String query = searchField.getText().trim().toLowerCase();
+
+        if (query.isEmpty() || query.equals("Nhập từ khoá (tên khoản phí hoặc miêu tả) và Enter để tìm kiếm")) {
+            data = getFeesData();
+        } else {
+            data = (ArrayList<Object[]>) getFeesData().stream()
+                    .filter(row -> row[2].toString().toLowerCase().contains(query) || row[4].toString().toLowerCase().contains(query))
+                    .collect(Collectors.toList());
+        }
+
+        currentPage = 1;
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        updateTable();
     }
 }
