@@ -17,7 +17,6 @@ import java.util.Locale;
 
 import static controller.FeeDAO.deleteFee;
 
-
 public class FeesTable extends JPanel {
     FeesWindow feesWindow;
 
@@ -60,20 +59,20 @@ public class FeesTable extends JPanel {
             viewButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    viewRow(rowIndex);
+                    viewRow((Integer) data.get(rowIndex)[1]);
                 }
             });
 
-            // Tạo nút "Chỉnh sửa"
+            // Tạo nút "Thêm hộ"
             JButton addButton = new JButton(new ImageIcon(editImage));
             addButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
             add(addButton);
 
-            // Thêm ActionListener cho nút chỉnh sửa
+            // Thêm ActionListener cho nút thêm hộ
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    editRow(rowIndex);
+                    addRow((Integer) data.get(rowIndex)[1]);
                 }
             });
 
@@ -86,7 +85,7 @@ public class FeesTable extends JPanel {
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    editRow(rowIndex);
+                    editRow((Integer) data.get(rowIndex)[1]);
                 }
             });
 
@@ -99,7 +98,7 @@ public class FeesTable extends JPanel {
             deleteButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    deleteRow(rowIndex);
+                    deleteRow((Integer) data.get(rowIndex)[1]);
                 }
             });
         }
@@ -113,9 +112,7 @@ public class FeesTable extends JPanel {
         repaint();
     }
 
-    private void viewRow(int rowIndex) {
-        int viewIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage + 1;
-
+    private void viewRow(int viewIndex) {
         FeesPopup popup = new FeesPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 FeesPopup.VIEW_FEE,
@@ -125,21 +122,17 @@ public class FeesTable extends JPanel {
         popup.setVisible(true);
     }
 
-    private void addRow(int rowIndex) {
-        int editIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
-
+    private void addRow(int addIndex) {
         FeesPopup popup = new FeesPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 FeesPopup.ADD_HOUSEHOLD,
                 feesWindow,
-                editIndex
+                addIndex
         );
         popup.setVisible(true);
     }
 
-    private void editRow(int rowIndex) {
-        int editIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
-
+    private void editRow(int editIndex) {
         FeesPopup popup = new FeesPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 FeesPopup.EDIT_FEE,
@@ -149,20 +142,11 @@ public class FeesTable extends JPanel {
         popup.setVisible(true);
     }
 
-    private void deleteRow(int rowIndex) {
-        int deleteIndex = rowIndex + (feesWindow.currentPage - 1) * feesWindow.rowsPerPage;
-
-        Object[] deleteData = feesWindow.data.get(deleteIndex);
-
-        int feeID = Integer.parseInt(deleteData[1].toString());
-
-        boolean success = deleteFee(feeID);
+    private void deleteRow(int deleteIndex) {
+        boolean success = deleteFee(deleteIndex);
 
         if (success) {
-            feesWindow.data.remove(deleteIndex);
-            System.out.println("Data deleted successfully.");
-
-            feesWindow.updateTable();
+            feesWindow.resetData();
 
             JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } else {
@@ -236,7 +220,7 @@ public class FeesTable extends JPanel {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.getDefault());
         numberFormat.setMinimumFractionDigits(0);
         numberFormat.setMaximumFractionDigits(0);
-        return numberFormat.format(amount) + " đ";
+        return numberFormat.format(amount);
     }
 
     private String formatDate(String dateString) {

@@ -45,7 +45,7 @@ public class HouseholdTable extends JPanel {
         for (int i = 0; i < data.size(); i++) {
             // Create the "View" button
             JButton viewButton = new JButton(new ImageIcon(viewImage));
-            viewButton.setBounds(columnXHousehold[3], (i + 1) * rowHeight + 10, 30, 30);
+            viewButton.setBounds(columnXHousehold[4], (i + 1) * rowHeight + 10, 30, 30);
             add(viewButton);
 
             // Add ActionListener to the view button
@@ -53,48 +53,36 @@ public class HouseholdTable extends JPanel {
             viewButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    viewRow(rowIndex);
+                    viewRow((Integer) data.get(rowIndex)[1]);
                 }
             });
 
             // Create the "Edit" button
             JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnXHousehold[4], (i + 1) * rowHeight + 10, 30, 30);
+            editButton.setBounds(columnXHousehold[5], (i + 1) * rowHeight + 10, 30, 30);
             add(editButton);
 
             // Add ActionListener to the edit button
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    editRow(rowIndex);
+                    editRow((Integer) data.get(rowIndex)[1]);
                 }
             });
 
             // Create the "Delete" button
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnXHousehold[5], (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnXHousehold[6], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Add ActionListener to the delete button
             deleteButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    deleteRow(rowIndex);
+                    deleteRow((Integer) data.get(rowIndex)[1]);
                 }
             });
         }
-    }
-
-    private void viewRow(int rowIndex) {
-        int viewIndex = rowIndex + (householdsWindow.currentPage - 1) * 10;
-
-        HouseholdPopup popup = new HouseholdPopup(
-                (JFrame) SwingUtilities.getWindowAncestor(this),
-                HouseholdPopup.VIEW_HOUSEHOLD,
-                householdsWindow,
-                viewIndex
-        );
-        popup.setVisible(true);
     }
 
     public void updateTableData(ArrayList<Object[]> newData) {
@@ -105,9 +93,17 @@ public class HouseholdTable extends JPanel {
         repaint();
     }
 
-    private void editRow(int rowIndex) {
-        int editIndex = rowIndex + (householdsWindow.currentPage - 1) * 10;
+    private void viewRow(int viewIndex) {
+        HouseholdPopup popup = new HouseholdPopup(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                HouseholdPopup.VIEW_HOUSEHOLD,
+                householdsWindow,
+                viewIndex
+        );
+        popup.setVisible(true);
+    }
 
+    private void editRow(int editIndex) {
         HouseholdPopup popup = new HouseholdPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 HouseholdPopup.EDIT_HOUSEHOLD,
@@ -117,26 +113,16 @@ public class HouseholdTable extends JPanel {
         popup.setVisible(true);
     }
 
-    private void deleteRow(int rowIndex) {
-        int deleteIndex = rowIndex + (householdsWindow.currentPage - 1) * 10;
-
-        Object[] deleteData = householdsWindow.data.get(deleteIndex);
-        Resident resident = (Resident) deleteData[3];
-
-        int householdID = resident.id;
-
+    private void deleteRow(int deleteIndex) {
         // Xác nhận trước khi xóa
         int confirmation = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa hộ khẩu này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirmation == JOptionPane.YES_OPTION) {
             // Xóa khỏi cơ sở dữ liệu
-            boolean success = deleteHousehold(householdID);
+            boolean success = deleteHousehold(deleteIndex);
 
             if (success) {
-                // Xóa dữ liệu khỏi ArrayList
-                householdsWindow.data.remove(deleteIndex);
-
                 // Cập nhật bảng
-                householdsWindow.updateTable();
+                householdsWindow.resetData();
 
                 // Hiển thị thông báo thành công
                 JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -148,7 +134,7 @@ public class HouseholdTable extends JPanel {
 
     private void drawTable(Graphics g) {
         int rowHeight = 50;
-        int[] colWidth = {50, 390, 200, 70, 70, 70};
+        int[] colWidth = {50, 300, 180, 110, 70, 70, 70};
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Draw header
@@ -188,9 +174,11 @@ public class HouseholdTable extends JPanel {
             g.drawString((String) rowData[2], columnXHousehold[1], (i + 1) * rowHeight + 30);
 
             // Draw head of household
-            Resident headOfHousehold = (Resident) rowData[3];
-
+            Resident headOfHousehold = (Resident) rowData[4];
             g.drawString(headOfHousehold.full_name, columnXHousehold[2], (i + 1) * rowHeight + 30);
+
+            // Draw row acreage (m2)
+            g.drawString((rowData[3]).toString(), columnXHousehold[3], (i + 1) * rowHeight + 30);
         }
 
         if (data.isEmpty()) {

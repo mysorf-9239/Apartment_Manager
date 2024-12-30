@@ -1,17 +1,18 @@
 package view.residents;
 
+import model.Resident;
+
 import javax.swing.*;
 import java.awt.*;
 
-import static controller.ResidentDAO.addResident;
-import static controller.ResidentDAO.updateResident;
+import static controller.ResidentDAO.*;
 
 public class ResidentPopup extends JDialog {
     public ResidentsWindow residentsWindow;
 
     private JTextField nameField;
     private JTextField birthDateField;
-    private JTextField genderField;
+    private JComboBox<String> genderField;
     private JTextField idCardField;
 
     // Các hằng số để xác định loại popup
@@ -104,9 +105,12 @@ public class ResidentPopup extends JDialog {
         genderLabel.setBounds(20, 170, getWidth() / 4, 40);
         contentPanel.add(genderLabel);
 
-        genderField = new JTextField();
+        String[] genderOptions = {"Nam", "Nữ", "Khác"};
+        genderField = new JComboBox<>(genderOptions);
         genderField.setBounds(10 + getWidth() / 4 + 5, 170, 300, 40);
         contentPanel.add(genderField);
+
+        genderField.setSelectedIndex(0);
 
         // Gợi ý cho Giới tính
         JLabel genderHintLabel = new JLabel("Nam/Nữ/Khác");
@@ -160,7 +164,7 @@ public class ResidentPopup extends JDialog {
         // Lấy giá trị từ các trường nhập liệu
         String name = nameField.getText();
         String birthDate = birthDateField.getText();
-        String gender = genderField.getText();
+        String gender = (String) genderField.getSelectedItem();
         String idCard = idCardField.getText();
 
         // Kiểm tra hợp lệ (có thể tùy chỉnh theo yêu cầu của bạn)
@@ -170,33 +174,19 @@ public class ResidentPopup extends JDialog {
         }
 
         // Lưu vào cơ sở dữ liệu
-        int addId = addResident(name, birthDate, gender, idCard);
+        addResident(name, birthDate, gender, idCard);
 
-        // Cập nhật danh sách cư dân
-        Object[] newResident = new Object[8];
-        newResident[0] = String.format("%02d", residentsWindow.data.size() + 1);
-        newResident[1] = name;
-        newResident[2] = birthDate;
-        newResident[3] = gender;
-        newResident[4] = idCard;
-        newResident[5] = "0";
-        newResident[6] = "";
-        newResident[7] = addId;
-        residentsWindow.data.add(newResident);
-
-        // Cập nhật bảng và phân trang
-        residentsWindow.updateTable();
+        // Cập nhật dữ liệu
+        residentsWindow.resetData();
     }
 
     private void editResidentContent(JPanel panel, int editIndex) {
-        Object[] oldData = residentsWindow.data.get(editIndex);
+        Resident data = getResidentById(editIndex);
 
-        int residentID = Integer.parseInt(oldData[7].toString());
-
-        String oldName = (String) oldData[1];
-        String oldBirthDate = (String) oldData[2];
-        String oldGender = (String) oldData[3];
-        String oldIdCard = (String) oldData[4];
+        String oldName = data.full_name;
+        String oldBirthDate = data.date_of_birth;
+        String oldGender = data.gender;
+        String oldIdCard = data.idCard;
 
         panel.setLayout(null);
 
@@ -271,9 +261,14 @@ public class ResidentPopup extends JDialog {
         genderLabel.setBounds(20, 250, getWidth() / 4, 40);
         contentPanel.add(genderLabel);
 
-        genderField = new JTextField(oldGender);
+        // Create a JComboBox with predefined options
+        String[] genderOptions = {"Nam", "Nữ", "Khác"};
+        genderField = new JComboBox<>(genderOptions);
         genderField.setBounds(10 + getWidth() / 4 + 5, 250, 300, 40);
         contentPanel.add(genderField);
+
+        // Set the selected item based on oldGender value
+        genderField.setSelectedItem(oldGender);
 
         //Old
         JLabel oldIdCardLabel = new JLabel("CCCD cũ:");
@@ -306,7 +301,7 @@ public class ResidentPopup extends JDialog {
         JButton continueButton = new JButton("Continue");
         continueButton.setPreferredSize(new Dimension(60, 40));
         continueButton.addActionListener(e -> {
-            saveEditResident(residentID);
+            saveEditResident(data.id);
             dispose();
         });
         footerPanel.add(continueButton);
@@ -324,7 +319,7 @@ public class ResidentPopup extends JDialog {
         // Lấy giá trị từ các trường nhập liệu
         String name = nameField.getText();
         String birthDate = birthDateField.getText();
-        String gender = genderField.getText();
+        String gender = (String) genderField.getSelectedItem();
         String idCard = idCardField.getText();
 
         // Kiểm tra hợp lệ (có thể tùy chỉnh theo yêu cầu của bạn)
@@ -337,19 +332,8 @@ public class ResidentPopup extends JDialog {
         boolean success = updateResident(residentID, name, birthDate, gender, idCard);
 
         if (success) {
-            // Cập nhật dữ liệu trong ArrayList
-            for (Object[] resident : residentsWindow.data) {
-                if ((Integer.parseInt(resident[7].toString()) == residentID)) {
-                    resident[1] = name;
-                    resident[2] = birthDate;
-                    resident[3] = gender;
-                    resident[4] = idCard;
-                    break;
-                }
-            }
-
             JOptionPane.showMessageDialog(null, "Cập nhật thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            residentsWindow.updateTable();
+            residentsWindow.resetData();
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình cập nhật.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }

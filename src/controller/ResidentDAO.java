@@ -35,10 +35,43 @@ public class ResidentDAO {
         return residentsData;
     }
 
+    /* Lấy dữ liệu cư dân với id */
+    public static Resident getResidentById(int residentId) {
+        String query = "SELECT id, full_name, date_of_birth, gender, id_card, is_temp_resident, household_id FROM residents WHERE id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            // Set the residentId parameter in the query
+            preparedStatement.setInt(1, residentId);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Extract data from the result set
+                    Resident resident = new Resident(
+                            resultSet.getInt("id"),
+                            resultSet.getString("full_name"),
+                            resultSet.getString("date_of_birth"),
+                            resultSet.getString("gender"),
+                            resultSet.getString("id_card"),
+                            resultSet.getBoolean("is_temp_resident"),
+                            resultSet.getInt("household_id")
+                    );
+
+                    return resident;
+                }
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        // Return null if no resident is found or an error occurs
+        return null;
+    }
+
     /* Thêm cư dân */
-    public static int addResident(String name, String birthDate, String gender, String idCard) {
+    public static void addResident(String name, String birthDate, String gender, String idCard) {
         String query = "INSERT INTO residents (full_name, date_of_birth, gender, id_card) VALUES (?, ?, ?, ?)";
-        int generatedId = -1;
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -50,13 +83,9 @@ public class ResidentDAO {
 
             preparedStatement.executeUpdate();
             ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                generatedId = generatedKeys.getInt(1);
-            }
         } catch (SQLException | DatabaseConnectionException e) {
             e.printStackTrace();
         }
-        return generatedId;
     }
 
     /* Cập nhật cư dân */
@@ -96,7 +125,7 @@ public class ResidentDAO {
 
     /* Lấy dữ liệu hộ khẩu */
     public static ArrayList<Object[]> getHouseholdsData() {
-        String query = "SELECT h.id, h.address, r.id, r.full_name, r.date_of_birth, r.gender, r.id_card " +
+        String query = "SELECT h.id, h.address, h.acreage, r.id, r.full_name, r.date_of_birth, r.gender, r.id_card, r.is_temp_resident, r.household_id " +
                 "FROM households h JOIN residents r ON h.head_of_household = r.id";
         ArrayList<Object[]> householdsData = new ArrayList<>();
 
@@ -106,17 +135,20 @@ public class ResidentDAO {
 
             int index = 0;
             while (rs.next()) {
-                Object[] row = new Object[4];
+                Object[] row = new Object[5];
                 row[0] = String.format("%02d", index + 1);
                 row[1] = rs.getInt("h.id");
                 row[2] = rs.getString("h.address");
+                row[3] = rs.getDouble("h.acreage");
                 Resident headOfHousehold = new Resident(
                         rs.getInt("r.id"),
                         rs.getString("r.full_name"),
                         rs.getString("r.date_of_birth"),
                         rs.getString("r.gender"),
-                        rs.getString("r.id_card"));
-                row[3] = headOfHousehold;
+                        rs.getString("r.id_card"),
+                        rs.getBoolean("is_temp_resident"),
+                        rs.getInt("household_id"));
+                row[4] = headOfHousehold;
                 householdsData.add(row);
                 index++;
             }

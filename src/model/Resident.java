@@ -1,7 +1,6 @@
 package model;
 
 public class Resident {
-
     public int id;
     public String full_name;
     public String date_of_birth;
@@ -11,14 +10,13 @@ public class Resident {
     public int household_id;
     public String relationshipType;
 
-    public Resident(int id, String full_name, String date_of_birth, String gender, String idCard) {
+    public Resident(int id, String full_name, String date_of_birth, String gender, String idCard, boolean is_temp_resident, int household_id) {
         this.id = id;
         this.full_name = full_name;
         this.date_of_birth = date_of_birth;
         this.gender = gender;
         this.idCard = idCard;
-        this.is_temp_resident = false;
+        this.is_temp_resident = is_temp_resident;
+        this.household_id = household_id;
     }
-
-
 }

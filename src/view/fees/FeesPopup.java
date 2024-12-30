@@ -74,7 +74,6 @@ public class FeesPopup extends JDialog {
         panel.setLayout(null);
         fee = getFeeById(viewIndex);
 
-
         // Header
         createHeaderPanel(panel, "Xem khoản phí");
 
@@ -113,18 +112,18 @@ public class FeesPopup extends JDialog {
         // Header
         createHeaderPanel(panel, "Thêm hộ gia đình");
 
-        if (fee.type.equals("all")) {
-            // Content
-            JPanel contentPanel = new JPanel();
-            contentPanel.setLayout(null);
-            contentPanel.setBounds(0, getHeight() / 10, getWidth(), getHeight() * 4 / 5);
-            panel.add(contentPanel);
-
-            // Là phí chung, không cần phải thêm riêng
-
-        } else {
-            // Thêm hộ gia đình vào danh sách khoản phí
-        }
+//        if (fee.type.equals("all")) {
+//            // Content
+//            JPanel contentPanel = new JPanel();
+//            contentPanel.setLayout(null);
+//            contentPanel.setBounds(0, getHeight() / 10, getWidth(), getHeight() * 4 / 5);
+//            panel.add(contentPanel);
+//
+//            // Là phí chung, không cần phải thêm riêng
+//
+//        } else {
+//            // Thêm hộ gia đình vào danh sách khoản phí
+//        }
 
         // Footer
         createFooterPanel(panel);
@@ -145,11 +144,10 @@ public class FeesPopup extends JDialog {
         contentPanel.add(feeTypeLabel);
 
         // ComboBox cho loại phí (Chung, Riêng)
-        JComboBox<String> feeTypeComboBox = new JComboBox<>(new String[]{"Chung", "Riêng"});
-        feeTypeComboBox.setBounds(130, 90, 200, 30);
-        // Đặt giá trị loại phí từ database vào ComboBox
-        feeTypeComboBox.setSelectedItem(fee.type.equals("all") ? "Chung" : "Riêng");
-        contentPanel.add(feeTypeComboBox);
+        JLabel feeType = new JLabel(fee.type.equals("all") ? "Chung" : "Riêng");
+        feeType.setBounds(135, 90, 200, 30);
+
+        contentPanel.add(feeType);
         addStatusCheckboxes(contentPanel, fee);
     }
 
@@ -251,7 +249,6 @@ public class FeesPopup extends JDialog {
 
         panel.add(footerPanel);
     }
-
 
     private void addFeeContent(JPanel panel) {
         panel.setLayout(null);
@@ -402,13 +399,12 @@ public class FeesPopup extends JDialog {
     }
 
     private void editFeeContent(JPanel panel, int editIndex) {
-        Object[] oldData = feesWindow.data.get(editIndex);
+        Fee data = getFeeById(editIndex);
 
         // Lấy các giá trị cũ
-        int feeId = (int) oldData[1];
-        String oldFeeName = (String) oldData[2];
-        String oldFeeDescription = (String) oldData[4];
-        double oldAmount = (double) oldData[3];
+        String oldFeeName = data.fee_name;
+        String oldFeeDescription = data.fee_description;
+        double oldAmount = data.amount;
 
         panel.setLayout(null);
 
@@ -499,7 +495,7 @@ public class FeesPopup extends JDialog {
         JButton saveButton = new JButton("Lưu");
         saveButton.setPreferredSize(new Dimension(60, 40));
         saveButton.addActionListener(e -> {
-            saveEditFee(editIndex, feeId, feeNameField.getText(), descriptionField.getText(), amountField.getText());
+            saveEditFee(editIndex, data.id, feeNameField.getText(), descriptionField.getText(), amountField.getText());
             dispose();
         });
         footerPanel.add(saveButton);
@@ -530,16 +526,8 @@ public class FeesPopup extends JDialog {
         boolean success = editFee(feeId, newFeeName, newDescription, newAmount);
 
         if (success) {
-            Object[] updatedFee = feesWindow.data.get(editIndex);
+            feesWindow.resetData();
 
-            updatedFee[2] = newFeeName;
-            updatedFee[3] = newAmount;
-            updatedFee[4] = newDescription;
-
-            Timestamp createdAt = new Timestamp(System.currentTimeMillis());
-            updatedFee[6] = createdAt;
-
-            feesWindow.updateTable();
             dispose();
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình lưu phí.", "Lỗi", JOptionPane.ERROR_MESSAGE);

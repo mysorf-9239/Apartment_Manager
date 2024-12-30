@@ -1,11 +1,15 @@
 package view.payments;
 
+import controller.DatabaseConnection;
+import controller.DatabaseConnectionException;
+import model.Fee;
 import model.Household;
 import model.Payment;
 
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -30,13 +34,12 @@ public class PaymentPopup extends JDialog {
 
     private JTextField paymentNameField;
 
-    public static final int VIEW_PAYMENT = 1;
     public static final int ADD_PAYMENT = 2;
     public static final int EDIT_PAYMENT = 3;
 
     ArrayList<Object[]> feesData;
 
-    public PaymentPopup(JFrame parent, int popupName, PaymentWindow paymentWindow, int editIndex) {
+    public PaymentPopup(JFrame parent, int popupName, PaymentWindow paymentWindow, int householdId, int feeId) {
         super(parent, "Popup", true);
         setUndecorated(true);
         setSize((int)(parent.getWidth() * 0.4), (int)(parent.getHeight() * 0.8));
@@ -49,134 +52,17 @@ public class PaymentPopup extends JDialog {
         popupPanel.setBackground(Color.WHITE);
 
         switch (popupName) {
-            case VIEW_PAYMENT:
-                viewPaymentContent(popupPanel, editIndex);
-                break;
             case ADD_PAYMENT:
                 addPaymentContent(popupPanel);
                 break;
             case EDIT_PAYMENT:
-                editPaymentContent(popupPanel, editIndex);
+                editPaymentContent(popupPanel, householdId, feeId);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid popup type");
         }
 
         setContentPane(popupPanel);
-    }
-
-    private void viewPaymentContent(JPanel panel, int viewIndex) {
-        panel.setLayout(null);
-
-        Object[] oldData = paymentWindow.data.get(viewIndex);
-
-        // Header
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(null);
-        headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
-        headerPanel.setBackground(Color.LIGHT_GRAY);
-
-        JLabel titleLabel = new JLabel("Xem khoản phí", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
-        headerPanel.add(titleLabel);
-        panel.add(headerPanel);
-
-        // Content
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(null);
-        contentPanel.setBounds(0, headerPanel.getHeight(), getWidth(), getHeight() * 4 / 5);
-        contentPanel.setBackground(Color.WHITE);
-
-        // Thông tin của chủ hộ
-        JLabel householdNameLabel = new JLabel("Họ và tên:");
-        householdNameLabel.setBounds(20, 30, 100, 40);
-        contentPanel.add(householdNameLabel);
-
-        householdNameField = new JTextField();
-        householdNameField.setBounds(130, 30, 200, 40);
-        householdNameField.setEditable(false); // Chỉ cho phép xem
-        contentPanel.add(householdNameField);
-        // Hiển thị giá trị cũ cho chủ hộ
-        householdNameField.setText(((Household) oldData[2]).head_of_household.full_name);
-
-        // CCCD
-        JLabel cccdLabel = new JLabel("CCCD:");
-        cccdLabel.setBounds(20, 90, 100, 40);
-        contentPanel.add(cccdLabel);
-
-        cccdField = new JTextField();
-        cccdField.setBounds(130, 90, 200, 40);
-        cccdField.setEditable(false); // Chỉ cho phép xem
-        contentPanel.add(cccdField);
-        // Hiển thị giá trị cũ cho CCCD
-        cccdField.setText(((Household) oldData[2]).head_of_household.idCard);
-
-        // Thông tin về khoản phí
-        JLabel feeNameLabel = new JLabel("Khoản phí:");
-        feeNameLabel.setBounds(20, 150, 100, 40);
-        contentPanel.add(feeNameLabel);
-
-        // Dropdown cho khoản phí
-        feeDropdown = new JComboBox<>();
-        feesData = getFeesDropdown();
-        String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
-        feeDropdown = new JComboBox<>(feeNames);
-        feeDropdown.setBounds(130, 150, 200, 40);
-        contentPanel.add(feeDropdown);
-
-        // Hiển thị giá trị cũ cho khoản phí
-        String oldFeeName = oldData[3].toString();
-        feeDropdown.setSelectedItem(oldFeeName);
-
-        // Số tiền thu
-        JLabel amountLabel = new JLabel("Số tiền đã thanh toán:");
-        amountLabel.setBounds(20, 210, 100, 40);
-        contentPanel.add(amountLabel);
-
-        amountField = new JTextField();
-        amountField.setBounds(130, 210, 200, 40);
-        amountField.setEditable(false);
-        contentPanel.add(amountField);
-        // Hiển thị giá trị cũ cho số tiền
-        ArrayList<Payment> payments = (ArrayList<Payment>) oldData[9];
-        double totalAmountPaid = 0.0;
-        // Tính tổng số tiền đã nộp
-        for (Payment payment : payments) {
-            totalAmountPaid += payment.payment_amount;
-        }
-        amountField.setText(String.valueOf(totalAmountPaid));
-
-        // Phương thức thanh toán
-        JLabel paymentMethodLabel = new JLabel("Trạng thái:");
-        paymentMethodLabel.setBounds(20, 270, 200, 40);
-        contentPanel.add(paymentMethodLabel);
-
-        statusField = new JTextField();
-        statusField.setBounds(130, 270, 200, 40);
-        statusField.setEditable(false);
-        contentPanel.add(statusField);
-        // Hiển thị giá trị cũ
-        statusField.setText(oldData[6].toString());
-
-        contentPanel.add(statusField);
-
-
-        panel.add(contentPanel);
-
-        // Footer
-        JPanel footerPanel = new JPanel();
-        footerPanel.setLayout(new GridLayout(1, 2));
-        footerPanel.setBounds(0, headerPanel.getHeight() + contentPanel.getHeight(), getWidth(), getHeight() / 10);
-        footerPanel.setBackground(Color.LIGHT_GRAY);
-
-        // Nút Hủy
-        JButton cancelButton = new JButton("Hủy");
-        cancelButton.setPreferredSize(new Dimension(60, 40));
-        cancelButton.addActionListener(e -> dispose());
-        footerPanel.add(cancelButton);
-
-        panel.add(footerPanel);
     }
 
     private void addPaymentContent(JPanel panel) {
@@ -188,7 +74,7 @@ public class PaymentPopup extends JDialog {
         headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
         headerPanel.setBackground(Color.LIGHT_GRAY);
 
-        JLabel titleLabel = new JLabel("Thêm Khoản Phí", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Thêm khoản thu", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
         headerPanel.add(titleLabel);
@@ -282,7 +168,6 @@ public class PaymentPopup extends JDialog {
         JButton continueButton = new JButton("Lưu");
         continueButton.setPreferredSize(new Dimension(60, 40));
         continueButton.addActionListener(e -> {
-            // Gọi phương thức lưu sau khi người dùng nhấn nút Lưu
             saveAddPayment();
         });
         footerPanel.add(continueButton);
@@ -325,6 +210,8 @@ public class PaymentPopup extends JDialog {
 
             if (!newPayment.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Thêm khoản phí thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                paymentWindow.resetData();
+
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Thêm khoản phí thất bại!", "Thông báo", JOptionPane.ERROR_MESSAGE);
@@ -337,10 +224,28 @@ public class PaymentPopup extends JDialog {
         }
     }
 
-    private void editPaymentContent(JPanel panel, int editIndex) {
+    private void editPaymentContent(JPanel panel, int householdId, int feeId) {
         panel.setLayout(null);
 
-        Object[] oldData = paymentWindow.data.get(editIndex);
+        Household household;
+        Fee fee;
+        Payment data = getPaymentById(householdId, feeId);
+        if (data != null) {
+            household = data.household;
+            fee = data.fee;
+        } else {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                household = getHouseholdById(householdId, conn);
+                fee = getFeeById(feeId, conn);
+            } catch (DatabaseConnectionException e) {
+                // Log and rethrow a specific exception for connection issues
+                throw new RuntimeException("Database connection error", e);
+            } catch (SQLException e) {
+                // Log and rethrow a specific exception for SQL issues
+                throw new RuntimeException("SQL error while retrieving data", e);
+            }
+        }
+
 
         // Header
         JPanel headerPanel = new JPanel();
@@ -348,7 +253,7 @@ public class PaymentPopup extends JDialog {
         headerPanel.setBounds(0, 0, getWidth(), getHeight() / 10);
         headerPanel.setBackground(Color.LIGHT_GRAY);
 
-        JLabel titleLabel = new JLabel("Chỉnh sửa khoản phí", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Chỉnh sửa khoản thu", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBounds(0, 0, getWidth(), headerPanel.getHeight());
         headerPanel.add(titleLabel);
@@ -370,26 +275,25 @@ public class PaymentPopup extends JDialog {
         householdNameField.setEditable(false);
         contentPanel.add(householdNameField);
         // Hiển thị giá trị cũ cho chủ hộ
-        householdNameField.setText(((Household) oldData[2]).head_of_household.full_name);
+        householdNameField.setText(household.head_of_household.full_name);
 
         // Thông tin về khoản phí
         JLabel feeNameLabel = new JLabel("Khoản phí:");
         feeNameLabel.setBounds(20, 90, 100, 40);
         contentPanel.add(feeNameLabel);
 
-        // Dropdown cho khoản phí
-        feeDropdown = new JComboBox<>();
-        feesData = getFeesDropdown();
-        String[] feeNames = feesData.stream().map(data -> data[1].toString()).toArray(String[]::new);
-        feeDropdown = new JComboBox<>(feeNames);
-        feeDropdown.setBounds(130, 90, 200, 40);
-        contentPanel.add(feeDropdown);
+        // Thông tin cho khoản phí
+        JLabel feeName = new JLabel(fee.fee_name.toString());
+        feeName.setBounds(135, 90, 200, 40);
+        contentPanel.add(feeName);
 
-        // Hiển thị giá trị cũ cho khoản phí
-        String oldFeeName = oldData[3].toString();
-        feeDropdown.setSelectedItem(oldFeeName);
-
-        ArrayList<Payment> payments = (ArrayList<Payment>) oldData[9];
+        // Các khoản phí
+        ArrayList<Payment> payments;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            payments = getPaymentsByHouseholdAndFee(household.id, fee.id, conn);
+        } catch (DatabaseConnectionException | SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         // Bảng để hiển thị các lần thanh toán
         String[] paymentColumnNames = {"ID", "Số tiền", "Ngày thanh toán", "Phương thức", "Ghi chú"};
@@ -459,7 +363,6 @@ public class PaymentPopup extends JDialog {
         saveButton.addActionListener(e -> { saveEditPayment(); });
         editPanel.add(saveButton);
 
-
         contentPanel.add(editPanel);
 
         panel.add(contentPanel);
@@ -486,10 +389,10 @@ public class PaymentPopup extends JDialog {
 
         try {
             boolean success = updatePayment(paymentId, amount, method);
-            paymentWindow.updatePaymentData();
 
             if (success) {
                 JOptionPane.showMessageDialog(null, "Cập nhật thành công!");
+                paymentWindow.resetData();
                 this.dispose();
             } else {
                 JOptionPane.showMessageDialog(null, "Cập nhật không thành công!");

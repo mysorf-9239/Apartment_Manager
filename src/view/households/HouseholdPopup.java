@@ -1,5 +1,7 @@
 package view.households;
 
+import controller.HouseholdDAO;
+import model.Household;
 import model.HouseholdMember;
 import model.Resident;
 
@@ -9,14 +11,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-import static controller.HouseholdDAO.*;
-
 public class HouseholdPopup extends JDialog {
     public HouseholdsWindow householdsWindow;
 
     ArrayList<HouseholdMember> members;
 
     private JTextField addressField;
+    private JTextField acreageField;
     private JTextField nameField;
     private JTextField CCCDField;
 
@@ -55,10 +56,10 @@ public class HouseholdPopup extends JDialog {
     }
 
     private void viewHouseholdContent(JPanel panel, int editIndex) {
-        Object[] householdData = householdsWindow.data.get(editIndex);
-        int householdID = Integer.parseInt(householdData[1].toString());
-        String householdAddress = (String) householdData[2];
-        Resident headOfHousehold = (Resident) householdData[3];
+        Household data = HouseholdDAO.getHouseholdById(editIndex);
+
+        String householdAddress = data.address;
+        Resident headOfHousehold = data.head_of_household;
 
         panel.setLayout(null);
 
@@ -129,7 +130,7 @@ public class HouseholdPopup extends JDialog {
         contentPanel.add(rightActionPanel);
 
         // Lấy danh sách thành viên cùng mối quan hệ
-        members = getHouseholdMembersWithRelationships(householdID);
+        members = HouseholdDAO.getHouseholdMembersWithRelationships(data.id);
         int yOffset = 10;
         for (HouseholdMember member : members) {
             // Member name
@@ -165,7 +166,7 @@ public class HouseholdPopup extends JDialog {
         JButton addButton = new JButton("Thêm");
         addButton.setBounds(350, 143, 60, 30);
         addButton.addActionListener(e -> {
-            showAddMemberForm(leftMembersPanel, rightActionPanel, householdID, headOfHousehold.id);
+            showAddMemberForm(leftMembersPanel, rightActionPanel, data.id, headOfHousehold.id);
         });
         contentPanel.add(addButton);
 
@@ -317,11 +318,11 @@ public class HouseholdPopup extends JDialog {
     private void addNewMemberToHousehold(JPanel leftPanel, JPanel rightPanel, int householdID, int headOfHouseholdID, String name, String idCard, String relationshipType) {
         try {
             // Step 1: Tìm resident_id từ residents table
-            Resident addResident = getHeadOfHouseholdInfo(name, idCard);
+            Resident addResident = HouseholdDAO.getHeadOfHouseholdInfo(name, idCard);
 
             // Step 2: Thêm thành viên vào hộ khẩu
             assert addResident != null;
-            boolean inserted = addRelationship(addResident.id, headOfHouseholdID, relationshipType, householdID);
+            boolean inserted = HouseholdDAO.addRelationship(addResident.id, headOfHouseholdID, relationshipType, householdID);
             if (inserted) {
                 JOptionPane.showMessageDialog(null, "Thêm hộ khẩu thành công!");
 
@@ -404,38 +405,53 @@ public class HouseholdPopup extends JDialog {
         addressHintLabel.setForeground(Color.GRAY);
         contentPanel.add(addressHintLabel);
 
+        // Diện tích
+        JLabel m2Label = new JLabel("Diện tích:");
+        m2Label.setBounds(20, 120, getWidth() / 4, 40);
+        contentPanel.add(m2Label);
+
+        acreageField = new JTextField();
+        acreageField.setBounds(20 + getWidth() / 4, 120, 300, 40);
+        contentPanel.add(acreageField);
+
+        // Gợi ý cho Địa chỉ
+        JLabel m2HintLabel = new JLabel("Diện tích căn hộ (m2)");
+        m2HintLabel.setBounds(25 + getWidth() / 4, 160, 300, 20);
+        m2HintLabel.setForeground(Color.GRAY);
+        contentPanel.add(m2HintLabel);
+
         // Chủ hộ
         JLabel headOfHouseholdLabel = new JLabel("Chủ hộ:");
-        headOfHouseholdLabel.setBounds(20, 110, getWidth() / 4, 40);
+        headOfHouseholdLabel.setBounds(20, 170, getWidth() / 4, 40);
         contentPanel.add(headOfHouseholdLabel);
 
         // Tên chủ hộ
         JLabel nameLabel = new JLabel("Họ và tên:");
-        nameLabel.setBounds(40, 150, getWidth() / 4, 40);
+        nameLabel.setBounds(40, 210, getWidth() / 4, 40);
         contentPanel.add(nameLabel);
 
         nameField = new JTextField();
-        nameField.setBounds(20 + getWidth() / 4, 150, 300, 40);
+        nameField.setBounds(20 + getWidth() / 4, 230, 300, 40);
         contentPanel.add(nameField);
 
         // Gợi ý cho Họ và tên
         JLabel nameHintLabel = new JLabel("Họ và tên đầy đủ");
-        nameHintLabel.setBounds(25 + getWidth() / 4, 190, 300, 20);
+        nameHintLabel.setBounds(25 + getWidth() / 4, 270, 300, 20);
         nameHintLabel.setForeground(Color.GRAY);
         contentPanel.add(nameHintLabel);
 
         // CCCD
         JLabel idCardLabel = new JLabel("CCCD:");
-        idCardLabel.setBounds(40, 230, getWidth() / 4, 40);
+        idCardLabel.setBounds(40, 290, getWidth() / 4, 40);
         contentPanel.add(idCardLabel);
 
         CCCDField = new JTextField();
-        CCCDField.setBounds(20 + getWidth() / 4, 230, 300, 40);
+        CCCDField.setBounds(20 + getWidth() / 4, 320, 300, 40);
         contentPanel.add(CCCDField);
 
         // Gợi ý cho CCCD
         JLabel CCCDHintLabel = new JLabel("Số căn cước công dân");
-        CCCDHintLabel.setBounds(25 + getWidth() / 4, 270, 300, 20);
+        CCCDHintLabel.setBounds(25 + getWidth() / 4, 360, 300, 20);
         CCCDHintLabel.setForeground(Color.GRAY);
         contentPanel.add(CCCDHintLabel);
 
@@ -470,22 +486,23 @@ public class HouseholdPopup extends JDialog {
         String address = addressField.getText();
         String fullName = nameField.getText();
         String idCard = CCCDField.getText();
+        Double acreage = Double.valueOf(acreageField.getText());
 
-        if (address.isEmpty() || fullName.isEmpty() || idCard.isEmpty()) {
+        if (address.isEmpty() || fullName.isEmpty() || idCard.isEmpty() || acreage.isNaN()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
             // Bước 1: Tìm thông tin của chủ hộ
-            Resident headOfHousehold = getHeadOfHouseholdInfo(fullName, idCard);
+            Resident headOfHousehold = HouseholdDAO.getHeadOfHouseholdInfo(fullName, idCard);
             if (headOfHousehold == null) {
                 JOptionPane.showMessageDialog(null, "Không tìm thấy thông tin chủ hộ trong hệ thống.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             // Bước 2: Thêm hộ khẩu mới vào bảng households và lấy household_id
-            int householdId = addHousehold(address, headOfHousehold.id);
+            int householdId = HouseholdDAO.addHousehold(address, acreage, headOfHousehold.id);
             if (householdId == -1) {
                 JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi thêm hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -494,16 +511,8 @@ public class HouseholdPopup extends JDialog {
             // Hiển thị thông báo thêm thành công
             JOptionPane.showMessageDialog(null, "Thêm hộ khẩu thành công!");
 
-            // Bước 3: Cập nhật danh sách hộ khẩu trên giao diện
-            Object[] newHousehold = new Object[4];
-            newHousehold[0] = String.format("%02d", householdsWindow.data.size() + 1);
-            newHousehold[1] = householdId;  // Lưu household_id
-            newHousehold[2] = address;
-            newHousehold[3] = headOfHousehold; // Đối tượng Resident chứa toàn bộ thông tin của chủ hộ
-            householdsWindow.data.add(newHousehold);
-
             // Cập nhật bảng và phân trang
-            householdsWindow.updateTable();
+            householdsWindow.resetData();
 
             // Đóng popup sau khi lưu thành công
             dispose();
@@ -515,11 +524,11 @@ public class HouseholdPopup extends JDialog {
 
     //Sửa hộ khẩu
     private void editHouseholdContent(JPanel panel, int editIndex) {
-        Object[] oldData = householdsWindow.data.get(editIndex);
+        Household data = HouseholdDAO.getHouseholdById(editIndex);
 
-        int householdID = Integer.parseInt(oldData[1].toString());
-        String householdAddress = (String) oldData[2];
-        Resident householdHeader = (Resident) oldData[3];
+        String householdAddress = data.address;
+        Resident householdHeader = data.head_of_household;
+        Double acreage = data.acreage;
 
         panel.setLayout(null);
 
@@ -560,47 +569,66 @@ public class HouseholdPopup extends JDialog {
         addressField.setBounds(20 + getWidth() / 4, 90, 300, 40);
         contentPanel.add(addressField);
 
+        //Old
+        JLabel oldAcreageLabel = new JLabel("Diện tích cũ:");
+        oldAcreageLabel.setBounds(20, 130, getWidth() / 4, 40);
+        oldAcreageLabel.setFont(oldAddressLabel.getFont().deriveFont(Font.ITALIC));
+        contentPanel.add(oldAcreageLabel);
+
+        JLabel oldAcreageLabel1 = new JLabel(acreage.toString());
+        oldAcreageLabel1.setBounds(25 + getWidth() / 4, 130, getWidth() / 2, 40);
+        contentPanel.add(oldAcreageLabel1);
+
+        // Diện tích
+        JLabel acreageLabel = new JLabel("Diện tích:");
+        acreageLabel.setBounds(20, 170, getWidth() / 4, 40);
+        contentPanel.add(acreageLabel);
+
+        acreageField = new JTextField(acreage.toString());
+        acreageField.setBounds(20 + getWidth() / 4, 170, 300, 40);
+        contentPanel.add(acreageField);
+
         // Chủ hộ
         JLabel headOfHouseholdLabel = new JLabel("Chủ hộ:");
-        headOfHouseholdLabel.setBounds(20, 130, getWidth() / 4, 40);
+        headOfHouseholdLabel.setBounds(20, 210, getWidth() / 4, 40);
         contentPanel.add(headOfHouseholdLabel);
 
         //Old
         JLabel oldNameLabel = new JLabel("Họ và tên cũ:");
-        oldNameLabel.setBounds(40, 160, getWidth() / 4, 40);
+        oldNameLabel.setBounds(40, 250, getWidth() / 4, 40);
         oldNameLabel.setFont(oldNameLabel.getFont().deriveFont(Font.ITALIC));
         contentPanel.add(oldNameLabel);
 
         JLabel oldNameLabel1 = new JLabel(householdHeader.full_name);
-        oldNameLabel1.setBounds(25 + getWidth() / 4, 160, getWidth() / 2, 40);
+        oldNameLabel1.setBounds(25 + getWidth() / 4, 250, getWidth() / 2, 40);
         contentPanel.add(oldNameLabel1);
 
         // Tên chủ hộ
         JLabel nameLabel = new JLabel("Họ và tên:");
-        nameLabel.setBounds(40, 200, getWidth() / 4, 40);
+        nameLabel.setBounds(40, 290, getWidth() / 4, 40);
         contentPanel.add(nameLabel);
 
         nameField = new JTextField(householdHeader.full_name);
-        nameField.setBounds(20 + getWidth() / 4, 200, 300, 40);
+        nameField.setBounds(20 + getWidth() / 4, 290, 300, 40);
         contentPanel.add(nameField);
 
         //Old
         JLabel oldCCCDLabel = new JLabel("CCCD cũ:");
-        oldCCCDLabel.setBounds(40, 240, getWidth() / 4, 40);
+        oldCCCDLabel.setBounds(40, 340, getWidth() / 4, 40);
         oldCCCDLabel.setFont(oldCCCDLabel.getFont().deriveFont(Font.ITALIC));
         contentPanel.add(oldCCCDLabel);
 
         JLabel oldCCCDLabel1 = new JLabel(householdHeader.idCard);
-        oldCCCDLabel1.setBounds(25 + getWidth() / 4, 240, getWidth() / 2, 40);
+        oldCCCDLabel1.setBounds(25 + getWidth() / 4, 340, getWidth() / 2, 40);
         contentPanel.add(oldCCCDLabel1);
 
         // CCCD
         JLabel idCardLabel = new JLabel("CCCD:");
-        idCardLabel.setBounds(40, 280, getWidth() / 4, 40);
+        idCardLabel.setBounds(40, 380, getWidth() / 4, 40);
         contentPanel.add(idCardLabel);
 
         CCCDField = new JTextField(householdHeader.idCard);
-        CCCDField.setBounds(20 + getWidth() / 4, 280, 300, 40);
+        CCCDField.setBounds(20 + getWidth() / 4, 380, 300, 40);
         contentPanel.add(CCCDField);
 
         panel.add(contentPanel);
@@ -615,7 +643,7 @@ public class HouseholdPopup extends JDialog {
         JButton saveButton = new JButton("Lưu");
         saveButton.setPreferredSize(new Dimension(60, 40));
         saveButton.addActionListener(e -> {
-            saveEditHousehold(householdID);
+            saveEditHousehold(data.id);
             dispose();
         });
         footerPanel.add(saveButton);
@@ -631,35 +659,31 @@ public class HouseholdPopup extends JDialog {
 
     private void saveEditHousehold(int householdID) {
         String newAddress = addressField.getText();
+        Double newAcreage = Double.parseDouble(acreageField.getText());
         String newHeadOfHouseholdName = nameField.getText();
         String newIdCard = CCCDField.getText();
 
-        if (newAddress.isEmpty() || newHeadOfHouseholdName.isEmpty() || newIdCard.isEmpty()) {
+        if (newAddress.isEmpty() || newHeadOfHouseholdName.isEmpty() || newIdCard.isEmpty() || newAcreage.isNaN()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
-            Resident headOfHousehold = getHeadOfHouseholdInfo(newHeadOfHouseholdName, newIdCard);
+            Resident headOfHousehold = HouseholdDAO.getHeadOfHouseholdInfo(newHeadOfHouseholdName, newIdCard);
             if (headOfHousehold == null) {
                 JOptionPane.showMessageDialog(null, "Không tìm thấy thông tin chủ hộ trong hệ thống.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             // Cập nhật cơ sở dữ liệu
-            boolean isUpdated = updateHousehold(householdID, newAddress, headOfHousehold.id);
+            boolean isUpdated = HouseholdDAO.updateHousehold(householdID, newAddress, newAcreage, headOfHousehold.id);
             if (!isUpdated) {
                 JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi cập nhật thông tin hộ khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Cập nhật thông tin vào ArrayList
-            Object[] updatedHousehold = householdsWindow.data.get(householdsWindow.getIndexById(householdID));
-            updatedHousehold[2] = newAddress;
-            updatedHousehold[3] = headOfHousehold;
-
             // Cập nhật bảng và phân trang
-            householdsWindow.updateTable();
+            householdsWindow.resetData();
 
             // Hiển thị thông báo thành công
             JOptionPane.showMessageDialog(null, "Cập nhật hộ khẩu thành công!");

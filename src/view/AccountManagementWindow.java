@@ -25,7 +25,7 @@ public class AccountManagementWindow extends JPanel {
     public AccountManagementWindow() {
         setLayout(null);
 
-        account = MainWindow.account; // Lấy thông tin tài khoản từ MainWindow
+        account = MainWindow.account;
 
         // Tiêu đề
         JLabel titleLabel = new JLabel("Quản lý tài khoản", SwingConstants.CENTER);
@@ -34,19 +34,20 @@ public class AccountManagementWindow extends JPanel {
         add(titleLabel);
 
         // Hiển thị ID tài khoản (không chỉnh sửa)
-        idLabel = new JLabel("Tài khoản ID: " + account.accountId);
+        idLabel = new JLabel("Id: " + account.accountId);
         idLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        idLabel.setBounds(50, 100, 300, 30);
+        idLabel.setBounds(50, 200, 100, 30);
         add(idLabel);
 
         // Hiển thị ảnh tài khoản
         imageLabel = new JLabel(new ImageIcon(account.accountImage));
-        imageLabel.setBounds(50, 150, 100, 100);
+        imageLabel.setBounds(200, 150, 100, 100);
+        imageLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         add(imageLabel);
 
         // Nút để chỉnh sửa ảnh tài khoản
         editImageButton = new JButton("Chỉnh sửa ảnh");
-        editImageButton.setBounds(170, 200, 150, 30);
+        editImageButton.setBounds(330, 200, 150, 30);
         add(editImageButton);
 
         // Hiển thị và chỉnh sửa tên tài khoản

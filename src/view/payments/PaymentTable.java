@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static controller.PaymentDAO.deletePayment;
-
+import static controller.PaymentDAO.getPaymentById;
 
 public class PaymentTable extends JPanel {
     PaymentWindow paymentWindow;
@@ -53,43 +53,32 @@ public class PaymentTable extends JPanel {
         int rowHeight = 50;
 
         for (int i = 0; i < data.size(); i++) {
-            // Create the "View" button
-            JButton viewButton = new JButton(new ImageIcon(viewImage));
-            viewButton.setBounds(columnX[5], (i + 1) * rowHeight + 10, 30, 30);
-            add(viewButton);
+            // Tạo nút "Chỉnh sửa"
+            JButton editButton = new JButton(new ImageIcon(editImage));
+            editButton.setBounds(columnX[5], (i + 1) * rowHeight + 10, 30, 30);
+            add(editButton);
 
             // Add ActionListener to the view button
             int rowIndex = i;
-            viewButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    viewRow(rowIndex);
-                }
-            });
-
-            // Tạo nút "Chỉnh sửa"
-            JButton editButton = new JButton(new ImageIcon(editImage));
-            editButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
-            add(editButton);
 
             // Thêm ActionListener cho nút chỉnh sửa
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    editRow(rowIndex);
+                    editRow(((Household) data.get(rowIndex)[2]).id, ((Fee) data.get(rowIndex)[3]).id);
                 }
             });
 
             // Tạo nút "Xóa"
             JButton deleteButton = new JButton(new ImageIcon(deleteImage));
-            deleteButton.setBounds(columnX[7], (i + 1) * rowHeight + 10, 30, 30);
+            deleteButton.setBounds(columnX[6], (i + 1) * rowHeight + 10, 30, 30);
             add(deleteButton);
 
             // Thêm ActionListener cho nút xóa
             deleteButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    deleteRow(rowIndex);
+                    deleteRow(((Household) data.get(rowIndex)[2]).id, ((Fee) data.get(rowIndex)[3]).id);
                 }
             });
         }
@@ -103,50 +92,24 @@ public class PaymentTable extends JPanel {
         repaint();
     }
 
-    private void viewRow(int rowIndex) {
-        int viewIndex = rowIndex + (paymentWindow.currentPage - 1) * 10;
-
-        PaymentPopup popup = new PaymentPopup(
-                (JFrame) SwingUtilities.getWindowAncestor(this),
-                PaymentPopup.VIEW_PAYMENT,
-                paymentWindow,
-                viewIndex
-        );
-        popup.setVisible(true);
-    }
-
-    private void editRow(int rowIndex) {
-        int editIndex = rowIndex + (paymentWindow.currentPage - 1) * paymentWindow.rowsPerPage;
-
+    private void editRow(int houseHoldId, int feeId) {
         PaymentPopup popup = new PaymentPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 PaymentPopup.EDIT_PAYMENT,
                 paymentWindow,
-                editIndex
+                houseHoldId,
+                feeId
         );
         popup.setVisible(true);
     }
 
-    private void deleteRow(int rowIndex) {
-        int deleteIndex = rowIndex + (paymentWindow.currentPage - 1) * paymentWindow.rowsPerPage;
-
-        Object[] deleteData = paymentWindow.data.get(deleteIndex);
-        Household hh = (Household)deleteData[2];
-        int household_id = hh.id;
-        Fee f = (Fee)deleteData[3];
-        int fee_id = f.id;
-
-
-
+    private void deleteRow(int houseHoldId, int feeId) {
         int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa mục này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            boolean success = deletePayment(household_id, fee_id);
+            boolean success = deletePayment(houseHoldId, feeId);
 
             if (success) {
-                paymentWindow.data.remove(deleteIndex);
-                System.out.println("Xóa dữ liệu thành công.");
-
-                paymentWindow.updateTable();
+                paymentWindow.resetData();
 
                 JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -155,10 +118,9 @@ public class PaymentTable extends JPanel {
         }
     }
 
-
     private void drawTable(Graphics g) {
         int rowHeight = 50;
-        int[] colWidth = {50, 170, 100, 200, 120, 70, 70, 70};
+        int[] colWidth = {50, 200, 165, 165, 130, 70, 70};
         int totalHeight = (data.size() + 1) * rowHeight;
 
         // Vẽ tiêu đề
@@ -230,7 +192,7 @@ public class PaymentTable extends JPanel {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.getDefault());
         numberFormat.setMinimumFractionDigits(0);
         numberFormat.setMaximumFractionDigits(0);
-        return numberFormat.format(amount) + " đ";
+        return numberFormat.format(amount);
     }
 
     private String formatDate(Date date) {

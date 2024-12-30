@@ -12,6 +12,84 @@ import static controller.DatabaseConnection.getConnection;
 import static controller.HouseholdDAO.getResidentById;
 
 public class PaymentDAO {
+    // Lấy data cho payment có id
+    public static Payment getPaymentById(int household_id, int fee_id) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // Kết nối cơ sở dữ liệu
+            conn = DatabaseConnection.getConnection();
+
+            String sql = "SELECT * FROM `payments` WHERE household_id = ? AND fee_id = ? LIMIT 1";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, household_id);
+            pstmt.setInt(2, fee_id);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Lấy household_id -> Lấy thông tin từ bảng households
+                Household household = getHouseholdById(household_id, conn);
+
+                // Lấy fee_id -> Lấy thông tin từ bảng fees
+                Fee fee = getFeeById(fee_id, conn);
+
+                // Tạo đối tượng Payment
+                return new Payment(
+                        rs.getInt("id"),
+                        household,
+                        fee,
+                        rs.getDouble("payment_amount"),
+                        rs.getTimestamp("payment_date"),
+                        rs.getString("payment_method"),
+                        rs.getString("note")
+                );
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+
+        return null;
+    }
+
+    // Method to get all payments for a specific household_id and fee_id
+    public static ArrayList<Payment> getPaymentsByHouseholdAndFee(int householdId, int feeId, Connection conn) throws SQLException {
+        ArrayList<Payment> paymentRecords = new ArrayList<>();
+
+        String sql = "SELECT `id`, `payment_amount`, `payment_date`, `payment_method`, `note` FROM `payments` WHERE household_id = ? AND fee_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, householdId);
+            pstmt.setInt(2, feeId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    // Lấy thông tin từ bảng households
+                    Household household = getHouseholdById(householdId, conn);
+
+                    // Lấy thông tin từ bảng fees
+                    Fee fee = getFeeById(feeId, conn);
+
+                    // Tạo một đối tượng Payment mới
+                    Payment payment = new Payment(
+                            rs.getInt("id"),
+                            household,
+                            fee,
+                            rs.getInt("payment_amount"),
+                            rs.getTimestamp("payment_date"),
+                            rs.getString("payment_method"),
+                            rs.getString("note")
+                    );
+                    paymentRecords.add(payment);
+                }
+            }
+        }
+        return paymentRecords;
+    }
+
     //Lấy data cho dropdown
     public static ArrayList<Object[]> getFeesDropdown() {
         ArrayList<Object[]> fees = new ArrayList<>();
@@ -36,8 +114,8 @@ public class PaymentDAO {
     }
 
     // Phương thức lấy thông tin từ bảng households theo household_id
-    private static Household getHouseholdById(int householdId, Connection conn) throws SQLException {
-        String sql = "SELECT `id`, `address`, `head_of_household` FROM `households` WHERE id = ?";
+    public static Household getHouseholdById(int householdId, Connection conn) throws SQLException {
+        String sql = "SELECT `id`, `address`, `head_of_household`, `acreage` FROM `households` WHERE id = ?";
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.setInt(1, householdId);
         ResultSet rs = pstmt.executeQuery();
@@ -50,7 +128,7 @@ public class PaymentDAO {
             Resident headOfHousehold = getResidentById(headOfHouseholdId);
 
             // Tạo đối tượng Household bao gồm cả đối tượng Resident cho head_of_household
-            household = new Household(rs.getInt("id"), rs.getString("address"), headOfHousehold);
+            household = new Household(rs.getInt("id"), rs.getString("address"), rs.getDouble("acreage"), headOfHousehold);
         }
         rs.close();
         pstmt.close();
@@ -58,7 +136,7 @@ public class PaymentDAO {
     }
 
     // Phương thức lấy thông tin từ bảng fees theo fee_id
-    private static Fee getFeeById(int feeId, Connection conn) throws SQLException {
+    public static Fee getFeeById(int feeId, Connection conn) throws SQLException {
         String sql = "SELECT `id`, `fee_name`, `fee_description`, `amount`, `created_at`, `updated_at`, `status`, `type` FROM `fees` WHERE id = ?";
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.setInt(1, feeId);
@@ -118,32 +196,6 @@ public class PaymentDAO {
         return fee;
     }
 
-
-    // Method to get all payments for a specific household_id and fee_id
-    private static ArrayList<Payment> getPaymentsByHouseholdAndFee(int householdId, int feeId, Connection conn) throws SQLException {
-        ArrayList<Payment> paymentRecords = new ArrayList<>();
-
-        String sql = "SELECT `id`, `payment_amount`, `payment_date`, `payment_method`, `note` FROM `payments` WHERE household_id = ? AND fee_id = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, householdId);
-            pstmt.setInt(2, feeId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    // Tạo một đối tượng Payment mới
-                    Payment payment = new Payment(
-                            rs.getInt("id"),
-                            rs.getInt("payment_amount"),
-                            rs.getTimestamp("payment_date"),
-                            rs.getString("payment_method"),
-                            rs.getString("note")
-                    );
-                    paymentRecords.add(payment);
-                }
-            }
-        }
-        return paymentRecords;
-    }
-
     // Phương thức mới lấy thông tin từ bảng payments dựa trên household_id và fee_id
     private static Payment getPaymentByHouseholdAndFeeId(int householdId, int feeId, Connection conn) throws SQLException {
         PreparedStatement paymentStmt = null;
@@ -158,8 +210,17 @@ public class PaymentDAO {
             paymentRs = paymentStmt.executeQuery();
 
             if (paymentRs.next()) {
+                // Lấy thông tin từ bảng households
+                Household household = getHouseholdById(householdId, conn);
+
+                // Lấy thông tin từ bảng fees
+                Fee fee = getFeeById(feeId, conn);
+
+                // Tạo một đối tượng Payment mới
                 payment = new Payment(
                         paymentRs.getInt("id"),
+                        household,
+                        fee,
                         paymentRs.getInt("payment_amount"),
                         paymentRs.getTimestamp("payment_date"),
                         paymentRs.getString("payment_method"),
@@ -237,7 +298,6 @@ public class PaymentDAO {
                 paymentData.add(paymentRecord);
                 index++;
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (DatabaseConnectionException e) {
@@ -426,95 +486,6 @@ public class PaymentDAO {
             if (pstmt != null) pstmt.close();
         }
         return amountDue;
-    }
-
-    public static ArrayList<Object[]> getPaymentsByHouseholdId(int householdId) {
-        ArrayList<Object[]> payments = new ArrayList<>();
-        // Thực hiện truy vấn để lấy thông tin khoản thu của hộ gia đình
-        String query = "SELECT * FROM payments WHERE household_id = ?";
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
-            statement.setInt(1, householdId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Object[] payment = new Object[]{
-                        resultSet.getInt("id"),
-                        resultSet.getInt("household_id"),
-                        resultSet.getInt("fee_id"),
-                        resultSet.getBigDecimal("payment_amount"),
-                        resultSet.getTimestamp("payment_date"),
-                        resultSet.getString("payment_method"),
-                        resultSet.getString("note")
-                };
-                payments.add(payment);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (DatabaseConnectionException e) {
-            throw new RuntimeException(e);
-        }
-        return payments;
-    }
-
-    public static Object[] getPaymentDetails(int paymentId) {
-        Object[] paymentDetails = null;
-        String query = "SELECT * FROM payments WHERE id = ?";
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
-            statement.setInt(1, paymentId);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                paymentDetails = new Object[]{
-                        resultSet.getInt("id"),
-                        resultSet.getInt("household_id"),
-                        resultSet.getInt("fee_id"),
-                        resultSet.getBigDecimal("payment_amount"),
-                        resultSet.getTimestamp("payment_date"),
-                        resultSet.getString("payment_method"),
-                        resultSet.getString("note")
-                };
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (DatabaseConnectionException e) {
-            throw new RuntimeException(e);
-        }
-        return paymentDetails;
-    }
-
-    public static boolean editPayment(int paymentId, double amount, String paymentMethod, String note) {
-        String query = "UPDATE payments SET payment_amount = ?, payment_method = ?, note = ? WHERE id = ?";
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
-            statement.setDouble(1, amount);
-            statement.setString(2, paymentMethod);
-            statement.setString(3, note);
-            statement.setInt(4, paymentId);
-            return statement.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        } catch (DatabaseConnectionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String getFeeNameById(int feeId) {
-        String feeName = null;
-        String query = "SELECT name FROM fees WHERE id = ?"; // Giả sử bảng 'fees' có cột 'name'
-
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, feeId);
-            ResultSet resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                feeName = resultSet.getString("name");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace(); // Xử lý ngoại lệ, có thể thay thế bằng logging
-        } catch (DatabaseConnectionException e) {
-            throw new RuntimeException(e);
-        }
-
-        return feeName;
     }
 
     public static boolean updatePayment(int paymentId, int amount, String method) throws SQLException {

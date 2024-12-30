@@ -97,7 +97,6 @@ public class ResidentsWindow extends JPanel {
         add(addPanel);
 
         // Retrieve data from the database
-        DatabaseConnection db = new DatabaseConnection();
         data = getResidentsData();
 
         // Calculate total pages
@@ -163,12 +162,18 @@ public class ResidentsWindow extends JPanel {
         paginationPanel.repaint();
     }
 
-
     // Cập nhật bảng dữ liệu và phân trang khi chuyển trang
     public void updateTable() {
         currentPageData = getPageData(currentPage);
         residentTable.updateTableData(currentPageData);
         updatePagination();
+    }
+
+    public void resetData() {
+        data = getResidentsData();
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        currentPage = 1;
+        updateTable();
     }
 
     public static int[] getColumnX() {

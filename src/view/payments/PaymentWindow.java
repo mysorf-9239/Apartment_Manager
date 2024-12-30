@@ -15,10 +15,10 @@ import static controller.PaymentDAO.getFeesDropdown;
 import static controller.PaymentDAO.getPaymentData;
 
 public class PaymentWindow extends JPanel {
-    private static final int[] columnX = {18, 80, 238, 330, 543, 660, 730, 800};
+    private static final int[] columnX = {18, 80, 278, 440, 603, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Chủ hộ", "Phải nộp", "Đã nộp", "Hạn nộp", "Xem", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Chủ hộ", "Phải nộp (đ)", "Đã nộp (đ)", "Hạn nộp", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
@@ -92,7 +92,6 @@ public class PaymentWindow extends JPanel {
         addPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         // Lấy dữ liệu từ cơ sở dữ liệu
-        DatabaseConnection db = new DatabaseConnection();
         feesData = getFeesDropdown();
 
         // Tạo dropdown từ danh sách
@@ -107,7 +106,7 @@ public class PaymentWindow extends JPanel {
         feeDropdown.addActionListener(e -> {
             int selectedIndex = feeDropdown.getSelectedIndex();
             selectedFeeId = (int) feesData.get(selectedIndex)[0];
-            updatePaymentData();
+            resetData();
         });
         addPanel.add(feeDropdown);
 
@@ -115,7 +114,7 @@ public class PaymentWindow extends JPanel {
         addButton.setPreferredSize(new Dimension(70, 30));
         addButton.setFocusable(false);
         addButton.addActionListener(e -> {
-            PaymentPopup popup = new PaymentPopup((JFrame) SwingUtilities.getWindowAncestor(this), PaymentPopup.ADD_PAYMENT, this, selectedFeeId);
+            PaymentPopup popup = new PaymentPopup((JFrame) SwingUtilities.getWindowAncestor(this), PaymentPopup.ADD_PAYMENT, this, -1, -1);
             popup.show();
         });
         addPanel.add(addButton);
@@ -142,15 +141,6 @@ public class PaymentWindow extends JPanel {
 
         updatePagination();
     }
-
-    // Hàm để cập nhật dữ liệu bảng khi chọn khoản phí mới
-    public void updatePaymentData() {
-        data = getPaymentData(selectedFeeId);
-        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
-        currentPage = 1;
-        updateTable();
-    }
-
 
     private void loadImages() {
         searchImage = ImageLoader.loadImage("/img/search.png", 30, 30);
@@ -202,6 +192,13 @@ public class PaymentWindow extends JPanel {
         currentPageData = getPageData(currentPage);
         paymentTable.updateTableData(currentPageData);
         updatePagination();
+    }
+
+    public void resetData() {
+        data = getPaymentData(selectedFeeId);
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        currentPage = 1;
+        updateTable();
     }
 
     public static int[] getColumnX() {

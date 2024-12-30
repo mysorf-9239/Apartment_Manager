@@ -1,5 +1,6 @@
 package view.residents;
 
+import model.Resident;
 import view.table.TableHeader;
 import util.ImageLoader;
 
@@ -11,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import static controller.ResidentDAO.deleteResident;
+import static controller.ResidentDAO.getResidentById;
 
 public class ResidentTable extends JPanel {
     ResidentsWindow residentsWindow;
@@ -52,7 +54,7 @@ public class ResidentTable extends JPanel {
             editButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    editRow(rowIndex);
+                    editRow(Integer.parseInt((String) data.get(rowIndex)[7]));
                 }
             });
 
@@ -65,7 +67,7 @@ public class ResidentTable extends JPanel {
             deleteButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    deleteRow(rowIndex);
+                    deleteRow(Integer.parseInt((String) data.get(rowIndex)[7]));
                 }
             });
         }
@@ -79,9 +81,7 @@ public class ResidentTable extends JPanel {
         repaint();
     }
 
-    private void editRow(int rowIndex) {
-        int editIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
-
+    private void editRow(int editIndex) {
         ResidentPopup popup = new ResidentPopup(
                 (JFrame) SwingUtilities.getWindowAncestor(this),
                 ResidentPopup.EDIT_RESIDENT,
@@ -91,23 +91,15 @@ public class ResidentTable extends JPanel {
         popup.setVisible(true);
     }
 
-    private void deleteRow(int rowIndex) {
-        int deleteIndex = rowIndex + (residentsWindow.currentPage - 1) * 10;
-
-        Object[] deleteData = residentsWindow.data.get(deleteIndex);
-
-        int residentID = Integer.parseInt(deleteData[7].toString());
+    private void deleteRow(int deleteIndex) {
+        Resident data = getResidentById(deleteIndex);
 
         // Xóa khỏi cơ sở dữ liệu
-        boolean success = deleteResident(residentID);
+        boolean success = deleteResident(data.id);
 
         if (success) {
-            // Xóa dữ liệu khỏi ArrayList
-            residentsWindow.data.remove(deleteIndex);
-            System.out.println("Data deleted successfully.");
-
-            // Cập nhật bảng
-            residentsWindow.updateTable();
+            // Cập nhật dữ liệu
+            residentsWindow.resetData();
 
             JOptionPane.showMessageDialog(null, "Xóa thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } else {

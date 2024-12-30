@@ -13,10 +13,10 @@ import util.ImageLoader;
 import static controller.ResidentDAO.getHouseholdsData;
 
 public class HouseholdsWindow extends JPanel {
-    private static final int[] columnXHousehold = {15, 70, 475, 660, 730, 800};
+    private static final int[] columnXHousehold = {15, 70, 380, 560, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Địa chỉ", "Chủ hộ", "Xem", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Địa chỉ", "Chủ hộ", "Diện tích (m2)", "Xem", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
@@ -97,7 +97,6 @@ public class HouseholdsWindow extends JPanel {
         add(addPanel);
 
         // Retrieve data from the database
-        DatabaseConnection db = new DatabaseConnection();
         data = getHouseholdsData();
 
         // Calculate total pages
@@ -136,6 +135,13 @@ public class HouseholdsWindow extends JPanel {
         updatePagination();
     }
 
+    public void resetData() {
+        data = getHouseholdsData();
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        currentPage = 1;
+        updateTable();
+    }
+
     // Cập nhật phân trang
     private void updatePagination() {
         paginationPanel.removeAll();
@@ -167,15 +173,6 @@ public class HouseholdsWindow extends JPanel {
         return columnXHousehold;
     }
 
-    public int getIndexById(int householdID) {
-        for (int i = 0; i < data.size(); i++) {
-            if (Integer.parseInt(data.get(i)[1].toString()) == householdID) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     private void filterTable() {
         String query = searchField.getText().trim().toLowerCase();
 
@@ -183,7 +180,7 @@ public class HouseholdsWindow extends JPanel {
             data = getHouseholdsData();
         } else {
             data = (ArrayList<Object[]>) getHouseholdsData().stream()
-                    .filter(row -> row[2].toString().toLowerCase().contains(query) || ((Resident) row[3]).full_name.toString().toLowerCase().contains(query) || ((Resident) row[3]).idCard.toString().toLowerCase().contains(query))
+                    .filter(row -> row[2].toString().toLowerCase().contains(query) || ((Resident) row[4]).full_name.toString().toLowerCase().contains(query) || ((Resident) row[3]).idCard.toString().toLowerCase().contains(query))
                     .collect(Collectors.toList());
         }
 
@@ -191,5 +188,4 @@ public class HouseholdsWindow extends JPanel {
         totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
         updateTable();
     }
-
 }

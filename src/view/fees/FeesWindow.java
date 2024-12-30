@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import controller.DatabaseConnection;
 import util.ImageLoader;
 
 import static controller.FeeDAO.getFeesData;
@@ -16,7 +15,7 @@ public class FeesWindow extends JPanel {
     private static final int[] columnX = {15, 80, 200, 300, 473, 590, 660, 730, 800};
     private BufferedImage searchImage;
     private JTextField searchField;
-    private String[] columnNames = {"STT", "Tên Khoản Phí", "Số Tiền", "Miêu tả", "Thời gian tạo", "Xem", "Thêm", "Sửa", "Xóa"};
+    private String[] columnNames = {"STT", "Tên Khoản Phí", "Số Tiền (đ)", "Miêu tả", "Thời gian tạo", "Xem", "Thêm", "Sửa", "Xóa"};
 
     public ArrayList<Object[]> data;
     public ArrayList<Object[]> currentPageData;
@@ -91,9 +90,6 @@ public class FeesWindow extends JPanel {
         feeDropdown.setPreferredSize(new Dimension(150, 30));
 
         // Lấy dữ liệu từ cơ sở dữ liệu
-        DatabaseConnection db = new DatabaseConnection();
-
-        // Default
         data = getFeesData();
 
         // Xử lý sự kiện khi chọn loại khoản phí
@@ -195,6 +191,13 @@ public class FeesWindow extends JPanel {
         currentPageData = getPageData(currentPage);
         feesTable.updateTableData(currentPageData);
         updatePagination();
+    }
+
+    public void resetData() {
+        data = getFeesData();
+        totalPages = (int) Math.ceil((double) data.size() / rowsPerPage);
+        currentPage = 1;
+        updateTable();
     }
 
     public static int[] getColumnX() {
