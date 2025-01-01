@@ -30,6 +30,60 @@ public class FeeDAO {
         return count;
     }
 
+    public static int countFeesChung() {
+        String query = "SELECT COUNT(*) FROM fees WHERE type = 'Chung'";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+    public static int countFeesRieng() {
+        String query = "SELECT COUNT(*) FROM fees WHERE type = 'Riêng'";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+    public static int countFeesBB() {
+        String query = "SELECT COUNT(*) FROM fees WHERE type = 'Bắt buộc'";
+        int count = 0;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            if (resultSet.next()) {
+                count = resultSet.getInt(1); // Lấy giá trị COUNT(*) từ kết quả truy vấn
+            }
+        } catch (SQLException | DatabaseConnectionException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     public static ArrayList<Object[]> getFeesData() {
         ArrayList<Object[]> feesData = new ArrayList<>();
         String query = "SELECT id, fee_name, amount, fee_description, created_at, updated_at, status FROM fees";
@@ -249,6 +303,7 @@ public class FeeDAO {
             return false;
         }
 
+        System.out.println(name + "" + cccd);
         int household_id = ResidentDAO.getIdByNameAndCCCD(name, cccd);
         System.out.println(household_id);
         if (household_id <= 0) {

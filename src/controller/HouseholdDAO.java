@@ -101,21 +101,43 @@ public class HouseholdDAO {
 
     // Add Household
     public static int addHousehold(String address, Double acreage, int headOfHouseholdId) {
-        String sql = "INSERT INTO households (address, acreage, head_of_household) VALUES (?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String insertHouseholdQuery = "INSERT INTO households (address, acreage, head_of_household) VALUES (?, ?, ?)";
+        String updateResidentQuery = "UPDATE residents SET household_id = ? WHERE id = ?";
 
-            pstmt.setString(1, address);
-            pstmt.setDouble(2, acreage);
-            pstmt.setInt(3, headOfHouseholdId);
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        return generatedKeys.getInt(1);
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertHouseholdQuery, Statement.RETURN_GENERATED_KEYS);
+                 PreparedStatement updateStmt = conn.prepareStatement(updateResidentQuery)) {
+
+                insertStmt.setString(1, address);
+                insertStmt.setDouble(2, acreage);
+                insertStmt.setInt(3, headOfHouseholdId);
+
+                int affectedRows = insertStmt.executeUpdate();
+
+                if (affectedRows > 0) {
+                    try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            int householdId = generatedKeys.getInt(1);
+
+                            updateStmt.setInt(1, householdId);
+                            updateStmt.setInt(2, headOfHouseholdId);
+                            int rowsUpdated = updateStmt.executeUpdate();
+
+                            if (rowsUpdated > 0) {
+                                conn.commit();
+                                return householdId;
+                            }
+                        }
                     }
                 }
+                conn.rollback();
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
             }
         } catch (SQLException | DatabaseConnectionException e) {
             e.printStackTrace();
@@ -241,21 +263,45 @@ public class HouseholdDAO {
 
     // Add Relationship
     public static boolean addRelationship(int residentID, int headOfHouseholdID, String relationshipType, int householdID) {
-        String query = "INSERT INTO relationships (resident_id, head_of_household_id, relationship_type, household_id) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO relationships (resident_id, head_of_household_id, relationship_type, household_id) VALUES (?, ?, ?, ?)";
+        String updateQuery = "UPDATE residents SET household_id = ? WHERE id = ?";
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(query)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            // Bắt đầu transaction
+            connection.setAutoCommit(false);
 
-            stmt.setInt(1, residentID);
-            stmt.setInt(2, headOfHouseholdID);
-            stmt.setString(3, relationshipType);
-            stmt.setInt(4, householdID);
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery);
+                 PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
 
-            return stmt.executeUpdate() > 0;
+                // Thực hiện INSERT
+                insertStmt.setInt(1, residentID);
+                insertStmt.setInt(2, headOfHouseholdID);
+                insertStmt.setString(3, relationshipType);
+                insertStmt.setInt(4, householdID);
+                int rowsInserted = insertStmt.executeUpdate();
 
+                // Thực hiện UPDATE
+                updateStmt.setInt(1, householdID);
+                updateStmt.setInt(2, residentID);
+                int rowsUpdated = updateStmt.executeUpdate();
+
+                // Kiểm tra cả hai thao tác
+                if (rowsInserted > 0 && rowsUpdated > 0) {
+                    connection.commit();
+                    return true;
+                } else {
+                    connection.rollback();
+                }
+            } catch (SQLException e) {
+                connection.rollback();
+                e.printStackTrace();
+            } finally {
+                connection.setAutoCommit(true);
+            }
         } catch (SQLException | DatabaseConnectionException e) {
             e.printStackTrace();
         }
         return false;
     }
+
 }

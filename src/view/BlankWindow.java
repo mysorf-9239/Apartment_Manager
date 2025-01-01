@@ -3,7 +3,7 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-import static controller.FeeDAO.countFees;
+import static controller.FeeDAO.*;
 import static controller.HouseholdDAO.countHouseholds;
 import static controller.ResidentDAO.countResidents;
 
@@ -11,6 +11,9 @@ public class BlankWindow extends JPanel {
     int resident = countResidents();
     int households = countHouseholds();
     int fees = countFees();
+    int feeChung = countFeesChung();
+    int feeRieng = countFeesRieng();
+    int feeBB = countFeesBB();
 
     public BlankWindow() {
         setLayout(null);
@@ -22,10 +25,10 @@ public class BlankWindow extends JPanel {
         add(titleLabel);
 
         // Tạo các ô vuông
-        createSquarePanel("Số nhân khẩu: " + resident, "img/people.png", 10, 100, 400, 250); // Phần I
-        createSquarePanel("Số hộ khẩu: " + households, "img/household.png", 430, 100, 400, 250); // Phần II
-        createSquarePanel("Số loại phí bắt buộc: 10", "img/fee.png", 430, 400, 400, 250); // Phần III
-        createSquarePanel("Số loại phí khác: 5\nChung: 3\nRiêng: 2", "img/fee.png", 10, 400, 400, 250); // Phần IV
+        createSquarePanel("Số nhân khẩu: " + resident, "/img/people.png", 10, 100, 400, 250); // Phần I
+        createSquarePanel("Số hộ khẩu: " + households, "/img/household.png", 430, 100, 400, 250); // Phần II
+        createSquarePanel("Số loại phí bắt buộc: " + feeBB, "/img/fee.png", 430, 400, 400, 250); // Phần III
+        createSquarePanel("Số loại phí khác: " + (feeChung+feeRieng) + "\nChung: "+ feeChung + "\nRiêng: " + feeRieng, "/img/fee.png", 10, 400, 400, 250); // Phần IV
     }
 
     private void createSquarePanel(String labelText, String iconPath, int x, int y, int width, int height) {
@@ -39,8 +42,9 @@ public class BlankWindow extends JPanel {
         JLabel imageLabel = new JLabel(new ImageIcon(iconPath), SwingConstants.CENTER);
         panel.add(imageLabel, BorderLayout.NORTH);
 
-        // Thêm nội dung
-        JLabel contentLabel = new JLabel(labelText, SwingConstants.CENTER);
+        // Thêm nội dung (sử dụng HTML để hỗ trợ xuống dòng)
+        String formattedText = "<html>" + labelText.replace("\n", "<br>") + "</html>";
+        JLabel contentLabel = new JLabel(formattedText, SwingConstants.CENTER);
         contentLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         panel.add(contentLabel, BorderLayout.CENTER);
 

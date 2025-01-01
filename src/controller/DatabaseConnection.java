@@ -17,7 +17,6 @@ public class DatabaseConnection {
     private static final String DATABASE_NAME = "apartment";
     private static final String DUMP_FILE_PATH = "src/controller/dump.sql";
 
-
     // Kết nối đến cơ sở dữ liệu
     public static Connection getConnection() throws DatabaseConnectionException {
         Connection connection = null;
