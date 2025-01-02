@@ -182,7 +182,6 @@ public class FeesPopup extends JDialog {
         continueButton.addActionListener(e -> {
             if (validateInputs()) {
                 saveAddHousehold(fee.id);
-                dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Vui lòng kiểm tra lại thông tin.");
             }
@@ -242,7 +241,11 @@ public class FeesPopup extends JDialog {
         }
 
         // Gọi phương thức thêm hộ gia đình vào cơ sở dữ liệu
-        addHousehold(feeId, name, cccd, sqlDate);
+        boolean success = addHousehold(feeId, name, cccd, sqlDate);
+
+        if (success) {
+            dispose();
+        }
     }
 
     private void createFeeInfoSection(JPanel contentPanel) {
@@ -612,7 +615,6 @@ public class FeesPopup extends JDialog {
         saveButton.setPreferredSize(new Dimension(60, 40));
         saveButton.addActionListener(e -> {
             saveEditFee(editIndex, data.id, feeNameField.getText(), descriptionField.getText(), amountField.getText());
-            dispose();
         });
         footerPanel.add(saveButton);
 

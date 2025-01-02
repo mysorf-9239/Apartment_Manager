@@ -86,6 +86,14 @@ public class PaymentWindow extends JPanel {
 
         add(searchBox);
 
+        // Ô reset
+        JButton resetButton = new JButton("↻");
+        resetButton.addActionListener(e -> resetData());
+        resetButton.setFocusPainted(false);
+        resetButton.setFocusable(false);
+        resetButton.setBounds(800, 0, 30, 30);
+        add(resetButton);
+
         // Nút thêm và dropdown chọn khoản phí
         JPanel addPanel = new JPanel();
         addPanel.setBounds(0, 65, 859, 30);

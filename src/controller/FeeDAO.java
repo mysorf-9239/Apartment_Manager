@@ -303,9 +303,7 @@ public class FeeDAO {
             return false;
         }
 
-        System.out.println(name + "" + cccd);
         int household_id = ResidentDAO.getIdByNameAndCCCD(name, cccd);
-        System.out.println(household_id);
         if (household_id <= 0) {
             JOptionPane.showMessageDialog(null, "Không tìm thấy hộ gia đình này.");
             return false;

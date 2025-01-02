@@ -1,5 +1,4 @@
 import view.LoginWindow;
-import view.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
