@@ -89,7 +89,7 @@ public class ResidentDAO {
     }
 
     /* Thêm cư dân */
-    public static void addResident(String name, String birthDate, String gender, String idCard) {
+    public static boolean addResident(String name, String birthDate, String gender, String idCard) {
         String query = "INSERT INTO residents (full_name, date_of_birth, gender, id_card) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
@@ -102,9 +102,11 @@ public class ResidentDAO {
 
             preparedStatement.executeUpdate();
             ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            return true;
         } catch (SQLException | DatabaseConnectionException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     /* Cập nhật cư dân */

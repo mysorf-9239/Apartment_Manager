@@ -260,7 +260,7 @@ public class FeesPopup extends JDialog {
         contentPanel.add(feeTypeLabel);
 
         // ComboBox cho loại phí (Chung, Riêng)
-        JLabel feeType = new JLabel(fee.type.equals("Chung") ? "Chung" : "Riêng");
+        JLabel feeType = new JLabel(fee.type);
         feeType.setBounds(135, 90, 200, 30);
 
         contentPanel.add(feeType);

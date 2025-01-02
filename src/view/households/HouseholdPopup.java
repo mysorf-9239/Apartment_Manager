@@ -468,7 +468,6 @@ public class HouseholdPopup extends JDialog {
         continueButton.setPreferredSize(new Dimension(60, 40));
         continueButton.addActionListener(e -> {
             saveAddHousehold();
-            dispose();
         });
         footerPanel.add(continueButton);
 
@@ -484,9 +483,12 @@ public class HouseholdPopup extends JDialog {
     private void saveAddHousehold() {
         // Lấy giá trị từ các trường nhập liệu
         String address = addressField.getText();
+        Double acreage = null;
+        if (acreageField.getText() != null && !acreageField.getText().equals("")) {
+            acreage = Double.valueOf(acreageField.getText());
+        }
         String fullName = nameField.getText();
         String idCard = CCCDField.getText();
-        Double acreage = Double.valueOf(acreageField.getText());
 
         if (address.isEmpty() || fullName.isEmpty() || idCard.isEmpty() || acreage.isNaN()) {
             JOptionPane.showMessageDialog(null, "Vui lòng điền đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -644,7 +646,6 @@ public class HouseholdPopup extends JDialog {
         saveButton.setPreferredSize(new Dimension(60, 40));
         saveButton.addActionListener(e -> {
             saveEditHousehold(data.id);
-            dispose();
         });
         footerPanel.add(saveButton);
 
@@ -659,7 +660,10 @@ public class HouseholdPopup extends JDialog {
 
     private void saveEditHousehold(int householdID) {
         String newAddress = addressField.getText();
-        Double newAcreage = Double.parseDouble(acreageField.getText());
+        Double newAcreage = null;
+        if (acreageField.getText() != null) {
+            newAcreage = Double.parseDouble(acreageField.getText());
+        }
         String newHeadOfHouseholdName = nameField.getText();
         String newIdCard = CCCDField.getText();
 

@@ -147,7 +147,6 @@ public class ResidentPopup extends JDialog {
         continueButton.setPreferredSize(new Dimension(60, 40));
         continueButton.addActionListener(e -> {
             saveAddResident();
-            dispose();
         });
         footerPanel.add(continueButton);
 
@@ -174,10 +173,14 @@ public class ResidentPopup extends JDialog {
         }
 
         // Lưu vào cơ sở dữ liệu
-        addResident(name, birthDate, gender, idCard);
+        boolean success = addResident(name, birthDate, gender, idCard);
 
         // Cập nhật dữ liệu
         residentsWindow.resetData();
+
+        if (success) {
+            dispose();
+        }
     }
 
     private void editResidentContent(JPanel panel, int editIndex) {
@@ -302,7 +305,6 @@ public class ResidentPopup extends JDialog {
         continueButton.setPreferredSize(new Dimension(60, 40));
         continueButton.addActionListener(e -> {
             saveEditResident(data.id);
-            dispose();
         });
         footerPanel.add(continueButton);
 
@@ -334,6 +336,7 @@ public class ResidentPopup extends JDialog {
         if (success) {
             JOptionPane.showMessageDialog(null, "Cập nhật thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             residentsWindow.resetData();
+            dispose();
         } else {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi trong quá trình cập nhật.", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
